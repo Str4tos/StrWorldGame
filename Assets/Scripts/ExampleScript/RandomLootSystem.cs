@@ -5,7 +5,7 @@ public class RandomLootSystem : MonoBehaviour
 {
 
     public int amountOfLoot = 10;
-    static ItemIngridientsDataBaseList inventoryItemList;
+    static ItemDataBaseList inventoryItemList;
 
     int counter = 0;
 
@@ -13,7 +13,7 @@ public class RandomLootSystem : MonoBehaviour
     void Start()
     {
 
-        inventoryItemList = (ItemIngridientsDataBaseList)Resources.Load("ItemDatabase");
+        inventoryItemList = (ItemDataBaseList)Resources.Load("ItemDatabase");
 
         while (counter < amountOfLoot)
         {
@@ -27,15 +27,15 @@ public class RandomLootSystem : MonoBehaviour
             float z = Random.Range(5, terrain.terrainData.size.z - 5);
 
 
-            if (inventoryItemList.itemList[randomNumber].itemDropModel == null)
+            if (true) //Stratos inventoryItemList.itemList[randomNumber].itemDropModel == null
                 counter--;
             else
             {
-                GameObject randomLootItem = (GameObject)Instantiate(inventoryItemList.itemList[randomNumber].itemDropModel);
-                PickUpItem item = randomLootItem.AddComponent<PickUpItem>();
-                item.item = inventoryItemList.itemList[randomNumber];
+//Stratos       GameObject randomLootItem = (GameObject)Instantiate(inventoryItemList.itemList[randomNumber].itemDropModel);
+                //PickUpItem item = randomLootItem.AddComponent<PickUpItem>();
+                //item.item = inventoryItemList.itemList[randomNumber];
 
-                randomLootItem.transform.localPosition = new Vector3(x, 0, z);
+                //randomLootItem.transform.localPosition = new Vector3(x, 0, z);
             }
         }
 

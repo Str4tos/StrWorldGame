@@ -11,7 +11,7 @@ public class RandomChestLootSystem : MonoBehaviour
     public int minItemInChest = 2;
     public int maxItemInChest = 10;
 
-    static ItemIngridientsDataBaseList inventoryItemList;
+    static ItemDataBaseList inventoryItemList;
 
     public GameObject storageBox;
 
@@ -24,7 +24,7 @@ public class RandomChestLootSystem : MonoBehaviour
     void Start()
     {
 
-        inventoryItemList = (ItemIngridientsDataBaseList)Resources.Load("ItemDatabase");
+        inventoryItemList = (ItemDataBaseList)Resources.Load("ItemDatabase");
 
         while (counter < amountOfChest)
         {

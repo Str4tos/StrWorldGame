@@ -24,7 +24,7 @@ public class Inventory : MonoBehaviour
 
     //Itemdatabase
     [SerializeField]
-    private ItemIngridientsDataBaseList itemDatabase;
+    private ItemDataBaseList itemDatabase;
 
     //GameObjects which are alive
     [SerializeField]
@@ -445,7 +445,7 @@ public class Inventory : MonoBehaviour
                 item.GetComponent<ItemOnObject>().item = itemDatabase.getItemByID(id);
                 item.transform.SetParent(SlotContainer.transform.GetChild(i));
                 item.GetComponent<RectTransform>().localPosition = Vector3.zero;
-                item.transform.GetChild(0).GetComponent<Image>().sprite = item.GetComponent<ItemOnObject>().item.itemIcon;
+ //Stratos               item.transform.GetChild(0).GetComponent<Image>().sprite = item.GetComponent<ItemOnObject>().item.itemIcon;
                 item.GetComponent<ItemOnObject>().item.indexItemInList = ItemsInInventory.Count - 1;
                 break;
             }
@@ -471,7 +471,7 @@ public class Inventory : MonoBehaviour
                     itemOnObject.item.quantity = 1;
                 item.transform.SetParent(SlotContainer.transform.GetChild(i));
                 item.GetComponent<RectTransform>().localPosition = Vector3.zero;
-                item.transform.GetChild(0).GetComponent<Image>().sprite = itemOnObject.item.itemIcon;
+//Stratos                item.transform.GetChild(0).GetComponent<Image>().sprite = itemOnObject.item.itemIcon;
                 itemOnObject.item.indexItemInList = ItemsInInventory.Count - 1;
                 //if (inputManagerDatabase == null)
                 //    inputManagerDatabase = (InputManager)Resources.Load("InputManager");

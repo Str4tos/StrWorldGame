@@ -604,7 +604,7 @@ public class DragItem : MonoBehaviour, IDragHandler, IPointerDownHandler, IEndDr
 
             else
             {
-                GameObject dropItem = (GameObject)Instantiate(GetComponent<ItemOnObject>().item.itemDropModel);
+                GameObject dropItem = new GameObject(); //Stratos - (GameObject)Instantiate(GetComponent<ItemOnObject>().item.itemDropModel)
                 dropItem.AddComponent<PickUpItem>();
                 dropItem.GetComponent<PickUpItem>().item = this.gameObject.GetComponent<ItemOnObject>().item;               
                 dropItem.transform.localPosition = GameObject.FindGameObjectWithTag("Player").transform.localPosition;

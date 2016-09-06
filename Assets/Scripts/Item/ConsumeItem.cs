@@ -107,7 +107,7 @@ public class ConsumeItem : MonoBehaviour, IPointerDownHandler
                                         }
                                         if (this == null)
                                         {
-                                            GameObject dropItem = (GameObject)Instantiate(otherSlotItem.itemDropModel);
+                                            GameObject dropItem = new GameObject(); //Stratos -(GameObject)Instantiate(otherSlotItem.itemDropModel);
                                             dropItem.AddComponent<PickUpItem>();
                                             dropItem.GetComponent<PickUpItem>().item = otherSlotItem;
                                             dropItem.transform.localPosition = GameObject.FindGameObjectWithTag("Player").transform.localPosition;
@@ -238,7 +238,7 @@ public class ConsumeItem : MonoBehaviour, IPointerDownHandler
                             }
                             if (this == null)
                             {
-                                GameObject dropItem = (GameObject)Instantiate(otherSlotItem.itemDropModel);
+                                GameObject dropItem = new GameObject(); //Stratos -(GameObject)Instantiate(otherSlotItem.itemDropModel)
                                 dropItem.AddComponent<PickUpItem>();
                                 dropItem.GetComponent<PickUpItem>().item = otherSlotItem;
                                 dropItem.transform.localPosition = GameObject.FindGameObjectWithTag("Player").transform.localPosition;

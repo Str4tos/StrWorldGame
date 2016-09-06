@@ -2,11 +2,11 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class ItemIngridientsDataBaseList : ScriptableObject
+public class ItemDataBaseList : ScriptableObject
 {             //The scriptableObject where the Item getting stored which you create(ItemDatabase)
 
     [SerializeField]
-    public List<ItemIngridients> itemList = new List<ItemIngridients>();              //List of it
+    public List<ItemDatabase> itemList = new List<ItemDatabase>();              //List of it
 
     public Item getItemByID(int id)
     {

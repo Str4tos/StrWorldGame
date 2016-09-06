@@ -17,14 +17,12 @@ public class StorageInventory : MonoBehaviour
     public List<Item> storageItems = new List<Item>();
 
     [SerializeField]
-    private ItemIngridientsDataBaseList itemDatabase;
+    private ItemDataBaseList itemDatabase;
 
     [SerializeField]
     public int distanceToOpenStorage;
 
     public float timeToOpenStorage;
-
-    //private InputManager inputManagerDatabase;
 
     float startTimer;
     float endTimer;
@@ -58,7 +56,7 @@ public class StorageInventory : MonoBehaviour
 
         player = GameObject.FindGameObjectWithTag("Player");
         inv = inventory.GetComponent<Inventory>();
-        ItemIngridientsDataBaseList inventoryItemList = (ItemIngridientsDataBaseList)Resources.Load("ItemDatabase");
+        ItemDataBaseList inventoryItemList = (ItemDataBaseList)Resources.Load("ItemDatabase");
 
         int creatingItemsForChest = 1;
 
@@ -93,7 +91,7 @@ public class StorageInventory : MonoBehaviour
     public void setImportantVariables()
     {
         if (itemDatabase == null)
-            itemDatabase = (ItemIngridientsDataBaseList)Resources.Load("ItemDatabase");
+            itemDatabase = (ItemDataBaseList)Resources.Load("ItemDatabase");
     }
 
     void Update()

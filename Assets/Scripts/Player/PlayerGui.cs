@@ -119,7 +119,7 @@ public class PlayerGui : MonoBehaviour
         {
             for (int i = size; i < mainInventory.ItemsInInventory.Count; i++)
             {
-                GameObject dropItem = (GameObject)Instantiate(mainInventory.ItemsInInventory[i].itemDropModel);
+                GameObject dropItem = new GameObject(); //(GameObject)Instantiate(mainInventory.ItemsInInventory[i].itemDropModel)
                 dropItem.AddComponent<PickUpItem>();
                 dropItem.GetComponent<PickUpItem>().item = mainInventory.ItemsInInventory[i];
                 dropItem.transform.localPosition = GameObject.FindGameObjectWithTag("Player").transform.localPosition;

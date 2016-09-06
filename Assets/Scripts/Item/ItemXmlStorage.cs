@@ -36,8 +36,8 @@ public class ItemXmlStorage : MonoBehaviour {
 }
 
 
-[System.Serializable]
-public class ItemDatabase
-{
-    public List<Item> list = new List<Item>();
-}
+//[System.Serializable]
+//public class ItemDatabase
+//{
+//    public List<Item> list = new List<Item>();
+//}
