@@ -1,0 +1,10 @@
+﻿using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+
+public class ItemIngridients : Item {
+
+    public ItemType itemType = ItemType.Ingridients;
+
+    
+}
