@@ -3,9 +3,10 @@ using System.Collections;
 
 public enum ItemTypeCustom        //all ItemTypes...you can add some 
 {
-    Other = 0,
-    Equip = 1,
-    Consume = 2
+    none = 0,
+    Other = 1,
+    Equip = 2,
+    Consume = 3
 }
 
 public enum ItemEquipType
@@ -14,14 +15,17 @@ public enum ItemEquipType
     Chest = 1,
     Pants = 2,
     Hands = 3,
-    Shoe = 4,
-    Wing = 5,
+    Shoes = 4,
+    Wings = 5,
     Necklace = 6,
     Ring = 7,
-    WeaponOneHend = 8,
-    WeaponSecond = 9,
+    WeaponRightHend = 8,
+    WeaponLeftHend = 9,
     WeaponTwoHends = 10,
-    WeaponBow = 11
+    WeaponBow = 11,
+    Agation = 12,
+    RingLeft = 13,
+    RingRight = 14
 }
 
 //public enum ItemWeaponType

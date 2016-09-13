@@ -11,7 +11,7 @@ public class PickUpItem : MonoBehaviour
     {
         _player = GameObject.FindGameObjectWithTag("Player");
         if (_player != null)
-            _inventory = _player.GetComponent<PlayerGui>().inventory.GetComponent<Inventory>();
+            _inventory = _player.GetComponent<PlayerGui>().invBag.GetComponent<Inventory>();
     }
 
     // Update is called once per frame

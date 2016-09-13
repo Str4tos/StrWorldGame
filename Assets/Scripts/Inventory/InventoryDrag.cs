@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections;
 
-public class DragInventory : MonoBehaviour, IPointerDownHandler, IDragHandler
+public class InventoryDrag : MonoBehaviour, IPointerDownHandler, IDragHandler
 {
 
     private Vector2 pointerOffset;                          //offset of the pointer for dragging

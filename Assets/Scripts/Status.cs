@@ -8,8 +8,6 @@ public class Status : MonoBehaviour
     //[HideInInspector]
     //public GameObject mainModel;
     //public Transform deathBody;
-    [HideInInspector]
-    public string spawnPointName = ""; //Store the name for Spawn Point When Change Scene
 
     protected Animator _Animator;
     protected Color popupColor;
@@ -20,6 +18,7 @@ public class Status : MonoBehaviour
 
     // characteristics
     public string personalName = "";
+    protected string locationName = ""; 
 
     [Range(1, 400)]
     public int level = 1;

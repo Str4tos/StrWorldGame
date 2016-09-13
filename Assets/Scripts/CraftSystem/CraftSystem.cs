@@ -46,38 +46,6 @@ public class CraftSystem : MonoBehaviour
         //playerStatsScript = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerScript>();
     }
 
-#if UNITY_EDITOR
-    [MenuItem("Master System/Create/Craft System")]
-    public static void menuItemCreateInventory()
-    {
-        GameObject Canvas = null;
-        if (GameObject.FindGameObjectWithTag("Canvas") == null)
-        {
-            GameObject inventory = new GameObject();
-            inventory.name = "Inventories";
-            Canvas = (GameObject)Instantiate(Resources.Load("Prefabs/Canvas - Inventory") as GameObject);
-            Canvas.transform.SetParent(inventory.transform, true);
-            GameObject panel = (GameObject)Instantiate(Resources.Load("Prefabs/Panel - CraftSytem") as GameObject);
-            panel.GetComponent<RectTransform>().localPosition = new Vector3(0, 0, 0);
-            panel.transform.SetParent(Canvas.transform, true);
-            GameObject draggingItem = (GameObject)Instantiate(Resources.Load("Prefabs/DraggingItem") as GameObject);
-            Instantiate(Resources.Load("Prefabs/EventSystem") as GameObject);
-            draggingItem.transform.SetParent(Canvas.transform, true);
-            panel.AddComponent<CraftSystem>();
-        }
-        else
-        {
-            GameObject panel = (GameObject)Instantiate(Resources.Load("Prefabs/Panel - CraftSystem") as GameObject);
-            panel.transform.SetParent(GameObject.FindGameObjectWithTag("Canvas").transform, true);
-            panel.GetComponent<RectTransform>().localPosition = new Vector3(0, 0, 0);
-            panel.AddComponent<CraftSystem>();
-            DestroyImmediate(GameObject.FindGameObjectWithTag("DraggingItem"));
-            GameObject draggingItem = (GameObject)Instantiate(Resources.Load("Prefabs/DraggingItem") as GameObject);
-            draggingItem.transform.SetParent(GameObject.FindGameObjectWithTag("Canvas").transform, true);
-        }
-    }
-#endif
-
     void Update()
     {
         ListWithItem();
@@ -131,7 +99,7 @@ public class CraftSystem : MonoBehaviour
         int length = itemInCraftSystem.Count;
         for (int i = 0; i < length; i++)
         {
-            GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerGui>().inventory.GetComponent<Inventory>().addItemToInventory(itemInCraftSystem[i].id, itemInCraftSystem[i].quantity);
+            GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerGui>().invBag.GetComponent<Inventory>().addItemToInventory(itemInCraftSystem[i].id, itemInCraftSystem[i].quantity);
             Destroy(itemInCraftSystemGameObject[i]);
         }
 

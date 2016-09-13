@@ -4,7 +4,7 @@ using System.Collections;
 public enum ItemAtributeType 
 {
     None = 0,
-    Dfense = 1,
+    Defense = 1,
     DefensePercent = 2,
     AttackDamage = 3,
     AttackDamagePercent = 4,

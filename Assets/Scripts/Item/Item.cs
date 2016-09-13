@@ -17,7 +17,6 @@ public class Item
     public int indexItemInList = 999;
 
     //Equipment
-	public ItemRequirements itemRequirements = new ItemRequirements();
 	public List<ItemAttribute> itemAttributes = new List<ItemAttribute>();
 
     //Consume

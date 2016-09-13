@@ -5,8 +5,8 @@ using UnityEngine.EventSystems;
 
 public class PlayerGui : MonoBehaviour
 {
-    public GameObject inventory;
-    public GameObject equipmentSystem;
+    public GameObject invBag;
+    public GameObject invEquip;
     public GameObject craftSystem;
     private Inventory craftSystemInventory;
     private CraftSystem cS;
@@ -151,10 +151,10 @@ public class PlayerGui : MonoBehaviour
 
         if (GameObject.FindGameObjectWithTag("Tooltip") != null)
             toolTip = GameObject.FindGameObjectWithTag("Tooltip").GetComponent<Tooltip>();
-        if (inventory != null)
-            mainInventory = inventory.GetComponent<Inventory>();
-        if (equipmentSystem != null)
-            characterSystemInventory = equipmentSystem.GetComponent<Inventory>();
+        if (invBag != null)
+            mainInventory = invBag.GetComponent<Inventory>();
+        if (invEquip != null)
+            characterSystemInventory = invEquip.GetComponent<Inventory>();
         if (craftSystem != null)
             craftSystemInventory = craftSystem.GetComponent<Inventory>();
 
@@ -237,7 +237,7 @@ public class PlayerGui : MonoBehaviour
     {
         if (Input.GetKeyDown(InputManager.CharacterSystemCode))
         {
-            if (!equipmentSystem.activeSelf)
+            if (!invEquip.activeSelf)
             {
 				//characterSystem.SetActive (true);
                 characterSystemInventory.openInventory();
@@ -252,7 +252,7 @@ public class PlayerGui : MonoBehaviour
 
         if (Input.GetKeyDown(InputManager.InventoryCode))
         {
-            if (!inventory.activeSelf)
+            if (!invBag.activeSelf)
             {
 				//inventory.SetActive (true);
 				mainInventory.openInventory();

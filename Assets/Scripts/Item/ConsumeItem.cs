@@ -19,7 +19,7 @@ public class ConsumeItem : MonoBehaviour, IPointerDownHandler
         if (GameObject.FindGameObjectWithTag("Tooltip") != null)
             tooltip = GameObject.FindGameObjectWithTag("Tooltip").GetComponent<Tooltip>();
         if (GameObject.FindGameObjectWithTag("EquipmentSystem") != null)
-            eS = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerGui>().equipmentSystem.GetComponent<EquipmentSystem>();
+            eS = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerGui>().invEquip.GetComponent<EquipmentSystem>();
 
         if (GameObject.FindGameObjectWithTag("MainInventory") != null)
             mainInventory = GameObject.FindGameObjectWithTag("MainInventory");
@@ -40,12 +40,12 @@ public class ConsumeItem : MonoBehaviour, IPointerDownHandler
                 //item from craft system to inventory
                 if (transform.parent.GetComponent<CraftResultSlot>() != null)
                 {
-                    bool check = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerGui>().inventory.GetComponent<Inventory>().checkIfItemAllreadyExist(item.id, item.quantity);
+                    bool check = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerGui>().invBag.GetComponent<Inventory>().checkIfItemAllreadyExist(item.id, item.quantity);
 
                     if (!check)
                     {
-                        GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerGui>().inventory.GetComponent<Inventory>().addItemToInventory(item.id, item.quantity);
-                        GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerGui>().inventory.GetComponent<Inventory>().stackableSettings();
+                        GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerGui>().invBag.GetComponent<Inventory>().addItemToInventory(item.id, item.quantity);
+                        GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerGui>().invBag.GetComponent<Inventory>().stackableSettings();
                     }
                     CraftSystem cS = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerGui>().craftSystem.GetComponent<CraftSystem>();
                     cS.deleteItems(item);
@@ -182,7 +182,7 @@ public class ConsumeItem : MonoBehaviour, IPointerDownHandler
         bool gearable = false;
 
         if (GameObject.FindGameObjectWithTag("EquipmentSystem") != null)
-            eS = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerGui>().equipmentSystem.GetComponent<EquipmentSystem>();
+            eS = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerGui>().invEquip.GetComponent<EquipmentSystem>();
 
         if (eS != null)
             itemTypeOfSlot = eS.itemTypeOfSlots;
