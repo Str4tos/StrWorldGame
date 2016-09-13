@@ -4,7 +4,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.EventSystems;
-using Utilities;
 
 
 public class SkillSetPlayer : MonoBehaviour
@@ -38,6 +37,9 @@ public class SkillSetPlayer : MonoBehaviour
     private List<RaycastResult> _RaycastResult;
     private PointerEventData _PointerEventData = new PointerEventData(null);
 
+    //EventSystem
+    private EventSystem _EventSystem;
+
     void Start()
     {
         _Animator = gameObject.GetComponent<Animator>();
@@ -64,44 +66,51 @@ public class SkillSetPlayer : MonoBehaviour
         mainSkillId = -1;
 
         //--ChoiseSkillsPanel
-        panelChoiseSkill = GameObject.Find("MainCanvas/ChoiseSkillsPanel");
+        panelChoiseSkill = GameObject.FindWithTag("MainCanvas").transform.FindChild("ChoiseSkillsPanel").gameObject;
         // Child id 0 - SlotsSkills
         slotsChoiseSkill = panelChoiseSkill.transform.GetChild(0).gameObject;
         panelChoiseSkill.SetActive(false);
 
-        _GraphicRaycaster = GameObject.Find("MainCanvas").GetComponent<GraphicRaycaster>();
+        _GraphicRaycaster = GameObject.FindWithTag("MainCanvas").GetComponent<GraphicRaycaster>();
 
+        _EventSystem = UnityEngine.EventSystems.EventSystem.current;
     }
 
     void Update()
     {
-
-        //Main skill activation
-        if (mainSkillId > -1)
+        //if mouse on UI
+        if (_EventSystem.IsPointerOverGameObject())
         {
-            MainSkillButtonPresser();
+            // Stop use Skill
+            MainSkillButtonPresser(true);
+
+            //Chenge main skill by ChoiseSkillsPanel
+            ChoiseMainSkill();
+            if (panelChoiseSkill.activeSelf)
+            {
+                //Bind selected skill to hotbar
+
+                BindSelectedSkill();
+            }
+        }
+        //Main skill activation
+        else 
+        {
+            MainSkillButtonPresser(false);
         }
 
         //Fast chenge main skill by hotkey (1,2,3,4 - defoult)
         FastChengeMainSkill();
 
-        //if mouse on UI
-        if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
-        {
-            //Chenge main skill by ChoiseSkillsPanel
-            ChoiseMainSkill();
-
-            //Bind selected skill to hotbar
-            if (panelChoiseSkill.activeSelf)
-            {
-                BindSelectedSkill();
-            }
-        }
+        
+        
     }
 
-    private void MainSkillButtonPresser()
+    private void MainSkillButtonPresser(bool KeyUpOnly)
     {
-        if (Input.GetKeyDown(InputManager.MainSkillCode))
+        if (mainSkillId < 0)
+            return;
+        if (!KeyUpOnly && Input.GetKeyDown(InputManager.MainSkillCode))
         {
             _NavMeshAgent.ResetPath();
             _Animator.SetBool("BasicAttackBool", false);
@@ -109,14 +118,14 @@ public class SkillSetPlayer : MonoBehaviour
             {
                 skillActive = (SkillCustom)Instantiate(skills[mainSkillId]);
             }
-			else if (skillActive.SkillName != skills[mainSkillId].SkillName)
+            else if (skillActive.SkillName != skills[mainSkillId].SkillName)
             {
-				Destroy(skillActive.gameObject);
+                Destroy(skillActive.gameObject);
                 skillActive = (SkillCustom)Instantiate(skills[mainSkillId]);
             }
             skillActive.CallSkill(gameObject, true);
         }
-
+        
         if (Input.GetKeyUp(InputManager.MainSkillCode))
         {
             skillActive.CallSkill(gameObject, false);
@@ -134,7 +143,7 @@ public class SkillSetPlayer : MonoBehaviour
             }
         }
     }
-    
+
     private void ChoiseMainSkill()
     {
 
@@ -194,7 +203,7 @@ public class SkillSetPlayer : MonoBehaviour
         _GraphicRaycaster.Raycast(_PointerEventData, _RaycastResult);
         if (_RaycastResult != null)
         {
-            if (_RaycastResult[0].gameObject.tag == "SkillToSelect")
+            if (_RaycastResult[0].gameObject.CompareTag("SkillToSelect"))
             {
                 return Int32.Parse(_RaycastResult[0].gameObject.name);
             }
@@ -242,7 +251,7 @@ public class SkillSetPlayer : MonoBehaviour
 
     }
 
-    
+
 
 
 }

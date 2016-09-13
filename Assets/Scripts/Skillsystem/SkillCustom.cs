@@ -72,6 +72,12 @@ public class SkillCustom : MonoBehaviour
 
     private void Activate()
     {
+        // If Mouse OnGui
+        if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+        {
+            StopSkill();
+        }
+
         //--Component apply
         componentError = null;
         foreach (SkillComponentCustom component in SkillComponents)

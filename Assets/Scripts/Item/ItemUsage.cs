@@ -8,8 +8,7 @@ public class ItemUsage : MonoBehaviour, IPointerDownHandler
     private ItemOnObjectCustom _ItemOnObject;
 
     private PlayerGuiCustom _PlayerGui;
-    private TooltipCustom tooltip;                                     //The tooltip script
-    private GameObject tooltipGameObject;                        //the tooltip as a GameObject
+    private TooltipCustom tooltip;                                //the tooltip as a GameObject
     private RectTransform canvasRectTransform;                    //the panel(Inventory Background) RectTransform
     private RectTransform tooltipRectTransform;                  //the tooltip RectTransform
     private RectTransform slotRectTransform;
@@ -19,12 +18,8 @@ public class ItemUsage : MonoBehaviour, IPointerDownHandler
     void Start()
     {
         _PlayerGui = GameObject.FindWithTag("Player").GetComponent<PlayerGuiCustom>();
-        tooltipGameObject = GameObject.FindGameObjectWithTag("Tooltip");
-        if (tooltipGameObject != null)
-        {
-            tooltip = tooltipGameObject.GetComponent<TooltipCustom>();
-            tooltipRectTransform = tooltipGameObject.GetComponent<RectTransform>();
-        }
+        tooltip = _PlayerGui.ToolTip;
+        tooltipRectTransform = _PlayerGui.ToolTip.gameObject.GetComponent<RectTransform>();
         slotRectTransform = transform.parent.GetComponent<RectTransform>();
         mainCanvas = GameObject.FindWithTag("MainCanvas").GetComponent<Canvas>();
         canvasRectTransform = mainCanvas.GetComponent<RectTransform>();
@@ -84,6 +79,8 @@ public class ItemUsage : MonoBehaviour, IPointerDownHandler
         }
         if (data.button == PointerEventData.InputButton.Left)
         {
+            if (tooltip == null)
+                tooltip = _PlayerGui.ToolTip;
             if (tooltip.isActive)
                 tooltip.HideToolTip();
             _ItemOnObject = GetComponent<ItemOnObjectCustom>();
@@ -178,40 +175,21 @@ public class ItemUsage : MonoBehaviour, IPointerDownHandler
         else if (item.itemType == ItemTypeCustom.Other)
             tooltip.ShowTooltip(_PlayerGui.InvBag.GetOtherItem(item));
 
+        Vector3[] slotCorners = new Vector3[4];                     //get the corners of the slot
+        GetComponent<RectTransform>().GetWorldCorners(slotCorners); //get the corners of the slot                
 
-
-        if (tooltip.isActive)
+        Vector2 localPointerPosition;
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRectTransform, slotCorners[2], data.pressEventCamera, out localPointerPosition))   // and set the localposition of the tooltip...
         {
-            //            Rect slotRect = RectTransformUtility.PixelAdjustRect(slotRectTransform, mainCanvas);
-            //			float yMinSlot = slotRect.yMin;
-            //            if (canvasRectTransform.rect.height < slotRect.yMin + tooltip.WindowHeigh)
-            //                yMinSlot = canvasRectTransform.rect.height - tooltip.WindowHeigh;
-            //            tooltipRectTransform.localPosition = new Vector3(slotRect.xMax, yMinSlot);
-
-
-
-            Vector3[] slotCorners = new Vector3[4];                     //get the corners of the slot
-            GetComponent<RectTransform>().GetWorldCorners(slotCorners); //get the corners of the slot                
-
-            Vector2 localPointerPosition;
-            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRectTransform, slotCorners[2], data.pressEventCamera, out localPointerPosition))   // and set the localposition of the tooltip...
+            float positionY = localPointerPosition.y;
+            float restHeigh = positionY - tooltip.WindowHeigh;
+            if (restHeigh < canvasRectTransform.rect.yMin)
             {
-
-                //tooltipRectTransform.localPosition = localPointerPosition;          //at the right bottom side of the slot
-                float positionY = localPointerPosition.y; // + (slotRectTransform.sizeDelta.y * 0.9f)
-                float restHeigh = positionY - tooltip.WindowHeigh;
-                if (restHeigh < canvasRectTransform.rect.yMin)
-                {
-                    restHeigh -= canvasRectTransform.rect.yMin;
-                    positionY -= restHeigh;
-                }
-                tooltipRectTransform.localPosition = new Vector3(localPointerPosition.x, positionY);
-                //+tooltip.WindowHeigh
+                restHeigh -= canvasRectTransform.rect.yMin;
+                positionY -= restHeigh;
             }
-
+            tooltipRectTransform.localPosition = new Vector3(localPointerPosition.x, positionY);
         }
-
-
 
     }
 }

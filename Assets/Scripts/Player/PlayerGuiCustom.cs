@@ -12,6 +12,7 @@ public class PlayerGuiCustom : MonoBehaviour
     private InventoryShop invShop;
     private InventoryCrafting invCrafting;
     private TooltipCustom toolTip;
+
     private PlayerMenu playerMenu;
 
     private Image healthBar;
@@ -22,6 +23,12 @@ public class PlayerGuiCustom : MonoBehaviour
     private Text expBarText;
 
 
+    #region Get/Set
+    public TooltipCustom ToolTip
+    {
+        get { return toolTip; }
+        set { toolTip = value; }
+    }
     public InventoryCrafting InvCrafting
     {
         get { return invCrafting; }
@@ -47,6 +54,8 @@ public class PlayerGuiCustom : MonoBehaviour
         get { return invShop; }
         set { invShop = value; }
     }
+
+    #endregion Get/Set
 
     void Awake()
     {

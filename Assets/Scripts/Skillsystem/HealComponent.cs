@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Utilities;
 
-
     public delegate void HealAppliedEventHandler(GameObject target, int amount);
    
     /// <summary>

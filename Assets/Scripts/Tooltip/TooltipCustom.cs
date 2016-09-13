@@ -18,6 +18,7 @@ public class TooltipCustom : MonoBehaviour
         prefabText = Resources.Load("Prefabs/GUI/ItemText") as GameObject;
         _RectTransform = GetComponent<RectTransform>();
         windowHeigh = _RectTransform.sizeDelta.y;
+        gameObject.SetActive(false);
     }
 
 

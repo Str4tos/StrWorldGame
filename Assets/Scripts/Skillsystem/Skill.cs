@@ -1,9 +1,9 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using Utilities;
 using Objectscripts;
 using System;
+using Utilities;
 
     public delegate void SkillEventHandler(Skill sender);
 
