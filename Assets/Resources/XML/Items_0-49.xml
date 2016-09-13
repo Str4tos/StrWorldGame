@@ -1,0 +1,42 @@
+<list>
+  <equip id="0" type="Chest" name="Armor">
+    <description></description>
+    <icon path="Textures/Icons/Equipment/A_Armor04"/>
+    <model path=""/>
+    <salePrice>100</salePrice>
+    <requests lvl="1" str="0" agi="0" vit="0" ene="0"/>
+    <atributes>
+      <add attribute="Defense">5</add>
+      <add attribute="Health">4</add>
+    </atributes>
+  </equip>
+  <item id="1" type="Ingridient" name="Iron">
+    <description></description>
+    <icon path="Textures/Icons/Item/I_Amethist"/>
+    <model path=""/>
+    <salePrice>40</salePrice>
+  </item>
+  <consume id="2" name="Potion Health">
+    <description></description>
+    <icon path="Textures/Icons/Item/P_Red03"/>
+    <model path=""/>
+    <salePrice>10</salePrice>
+    <numberTicks>5</numberTicks>
+    <delayTick>1</delayTick>
+    <maxInStack>5</maxInStack>
+    <atributes>
+      <add attribute="Health">10</add>
+    </atributes>
+  </consume>
+  <equip id="3" type="Head" name="Head Test">
+    <description></description>
+    <icon path="Textures/Icons/Equipment/C_Hat01"/>
+    <model path=""/>
+    <salePrice>100</salePrice>
+    <requests lvl="1" str="0" agi="0" vit="0" ene="0"/>
+    <atributes>
+      <add attribute="Defense">5</add>
+      <add attribute="Health">4</add>
+    </atributes>
+  </equip>
+</list>

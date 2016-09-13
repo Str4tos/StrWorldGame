@@ -209,12 +209,12 @@ using System.Collections.Generic;
                     // Skill is active, start casttime and cooldown
                     if (curSkill.executeComponentsOn == Skill.ExecuteComponentsOn.Channeled)
                     {
-                        UI.Casttimebar.ActivateChannelTime(curSkill.Duration);
+                        Casttimebar.ActivateChannelTime(curSkill.Duration);
                         lastSkill = curSkill;
                     }
                     else
                     {
-                        UI.Casttimebar.ActivateCasttime(curSkill.CastTime);
+                        Casttimebar.ActivateCasttime(curSkill.CastTime);
                     }
 
                     if (curSkill.CastTime == 0)
@@ -251,7 +251,7 @@ using System.Collections.Generic;
 
         void curSkill_SkillFinished(Skill sender)
         {
-            UI.Casttimebar.Abort();
+            Casttimebar.Abort();
             sender.CasttimeElapsed -= new SkillEventHandler(curSkill_CasttimeElapsed);
             sender.CasttingAborted -= new SkillEventHandler(curSkill_CasttingAborted);
             sender.SkillFinished -= new SkillEventHandler(curSkill_SkillFinished);
@@ -279,7 +279,7 @@ using System.Collections.Generic;
 
         void curSkill_CasttingAborted(Skill sender)
         {
-            UI.Casttimebar.Abort();
+            Casttimebar.Abort();
             lastSkill = null;
             sender.SkillFinished -= new SkillEventHandler(curSkill_SkillFinished);
         }

@@ -1,9 +1,9 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Utilities;
 using Objectscripts;
 using System;
-using Utilities;
 
     public delegate void SkillEventHandler(Skill sender);
 
@@ -71,7 +71,7 @@ using Utilities;
 
         PhysicsComponent pComp = null;
 
-        public string[] Tags = {" "};
+        public string[] Tags;
 
         public bool MovementInterruptsCasting = false;
 
@@ -618,5 +618,5 @@ using Utilities;
             if(pComp != null)
                 pComp.Apply(check);
 		}
-	}
-
+	
+}	
