@@ -257,7 +257,7 @@ public class MovementPlayer : MonoBehaviour {
 //    }
 
 	public void EventBasicAttack(){
-		_StatusEnemy.ReceivDamage(_StatusPlayer.getAttackDamage);
+		_StatusEnemy.ReceivDamage(_StatusPlayer.getAttackDamage, _StatusPlayer);
 		if (_StatusEnemy.IsDead)
 		{
 			_Animator.SetBool("BasicAttackBool", false);

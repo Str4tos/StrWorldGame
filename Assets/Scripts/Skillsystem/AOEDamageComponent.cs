@@ -19,7 +19,7 @@ public class AOEDamageComponent : SkillComponentCustom
                 Status targetStatus = (Status)col.gameObject.GetComponent(typeof(Status));
                 if (targetStatus != null)
                 {
-                    targetStatus.ReceivDamage(_Skill.SkillPower);
+					targetStatus.ReceivDamage(_Skill.SkillPower, _Skill.StatusCaster);
                 }
             }
         }

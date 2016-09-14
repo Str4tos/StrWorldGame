@@ -9,7 +9,8 @@ using System.Xml.Serialization;
 public class ItemXmlStorage : MonoBehaviour
 {
 
-    private readonly string[] arrayFiles = new string[] { "Items_0-49.xml", "Items_50-99.xml", "Items_100-149.xml" };
+    private const int quantityIdInFile = 50;
+    //private readonly string[] arrayFiles = new string[] { "Items_0-49.xml", "Items_50-99.xml", "Items_100-149.xml" };
     private const string defaultSpritePath = "Textures/Icons/Item/I_Map";
     private const string defaultDropModelPath = "Prefabs/Inventory/DraggingItem";
     
@@ -201,8 +202,12 @@ public class ItemXmlStorage : MonoBehaviour
     }
     private XmlReader GetXmlReader(int id)
     {
-        int numFile = id / 50;
-        XmlReader xmlReader = XmlReader.Create(Application.dataPath + "/Resources/XML/" + arrayFiles[numFile]);  
+        int minIdInFile = (id / quantityIdInFile) * quantityIdInFile;
+        string nameFile = minIdInFile + "-" + (minIdInFile + quantityIdInFile - 1);
+        TextAsset _TextAsset = Resources.Load("XML/Items/" + nameFile) as TextAsset;
+        //XmlReader xmlReader = XmlReader.Create(Application.dataPath + "/Resources/XML/" + arrayFiles[numFile]);  
+        TextReader _TextReader = new StringReader(_TextAsset.text);
+        XmlReader xmlReader = XmlReader.Create(_TextReader);
         xmlReader.MoveToContent();
         return xmlReader;
     }

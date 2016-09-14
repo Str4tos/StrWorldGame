@@ -4,21 +4,15 @@ using System.Collections;
 public class Status : MonoBehaviour
 {
 
-    // values
-    //[HideInInspector]
-    //public GameObject mainModel;
-    //public Transform deathBody;
-
     protected Animator _Animator;
-    protected Color popupColor;
-    protected int popupDmgMotion;
 
-    protected bool dead = false;
 
+    
 
     // characteristics
     public string personalName = "";
     protected string locationName = ""; 
+	protected bool dead = false;
 
     [Range(1, 400)]
     public int level = 1;
@@ -49,6 +43,12 @@ public class Status : MonoBehaviour
     [HideInInspector]
     public float buffDmgPercent = 1, buffBarrPercent = 1, buffHealthPercent = 1;
 
+	//Popup
+	protected Color popupColorBasic;
+	protected Color popupColorCritical;
+	protected Color popupColorMiss = new Color (0.8f, 0.8f, 0.8f);
+	protected int popupDmgMotion;
+
     //Positive Buffs
     [HideInInspector]
     public bool buffDmg = false, buffBarrier = false, buffHealth = false;
@@ -62,22 +62,13 @@ public class Status : MonoBehaviour
     public GameObject flameEffect;
     public GameObject freezEffect;
 
-    //void Start()
-    //{
-    //    //CalculateStats();
-    //    //playerGui = gameObject.GetComponent<PlayerGui>();
-    //    //playerGui.setGuiExp(currExp, currExpToLevelUp);
-    //    //InvokeRepeating("ManaRegen", 0.5f, 0.5f);
-
-    //}
-
     protected virtual void CalculateStats()
     {
         attackDmg = strenght /5 + weaponAtk;
         attackDmg = (int)((float)attackDmg * buffDmgPercent);
         wizardyDmg = energy * 2;
         wizardyDmg = (int)((float)wizardyDmg * weaponPOWpercent * buffDmgPercent);
-        defense = agility / 5 + equipDef;
+        defense = agility / 7 + equipDef;
         //defense = (int)((float)defense);
         attackSpeed = 1.0f + (float)agility / 1500.0f;
 		maxHealth = 90.0f + (float)vitality * 2.0f;
@@ -88,37 +79,46 @@ public class Status : MonoBehaviour
         checkMaxMp();
     }
 
-    public virtual void ReceivDamage(float amount)
-    {
-        if (!dead)
-        {
-			Color tempColor = popupColor;
-            if (buffBarrier)
-                amount = (amount * buffBarrPercent);
-            amount -= defense;
+	public virtual void ReceivDamage(float amount, Status _Status){
+		if (dead)
+			return;
+		bool Critical = false;
+		if (buffBarrier)
+			amount = (amount * buffBarrPercent);
+		amount -= defense;
 
-			//Chance 0-10% more dmg
-			amount *= 1 + Random.value / 20f;
+		//Chance 0-10% more dmg
+		amount *= 1 + Random.value / 20f;
 
-			//Chance crit attack 40%
-			if (Random.value > 0.6f) {
-				amount *= 1.8f;
-				tempColor = new Color(0.75f, 0.40f, 1.0f);
-			} 
-            if (amount < 1.0f)
-            {
-				PopupInfo.setText ("Miss", transform, popupDmgMotion, new Color (0.8f, 0.8f, 0.8f));
-                return;
-            }
+		//Chance crit attack 40%
+		if (Random.value > 0.6f) {
+			amount *= 1.8f;
+			Critical = true;
+		} 
+		if(Critical)
+			ReceivDamage (amount, popupColorCritical);
+		else
+			ReceivDamage (amount, popupColorBasic);
 
-            health -= amount;
+	}
 
-            if (health < 0)
-                Death();
+	public virtual void ReceivDamage (float amount, Color popupColor)
+	{
+		if (dead)
+			return;
 
-            PopupInfo.setText(amount.ToString("N0"), transform, popupDmgMotion, tempColor);
-        }
-    }
+		if (amount < 1.0f) {
+			PopupInfo.setText ("Miss", transform, popupDmgMotion, popupColorMiss);
+			return;
+		}
+
+		health -= amount;
+
+		if (health < 1)
+			Death ();
+		PopupInfo.setText (amount.ToString ("N0"), transform, popupDmgMotion, popupColor);
+			
+	}
 
     public bool IsDead
     {

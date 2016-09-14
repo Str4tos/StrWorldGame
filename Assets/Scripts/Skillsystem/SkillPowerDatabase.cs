@@ -4,21 +4,20 @@ using System;
 
 public class SkillPowerDatabase : MonoBehaviour
 {
-    public delegate float SkillPowerValue(GameObject caster);
+	public delegate float SkillPowerValue(Status statusCaster);
     public int idSkillPower = 0;
 
     private SkillPowerValue[] _SkillPowerValue;
 
-    public float getSkillPower(GameObject caster)
+    public float getSkillPower(Status statusCaster)
     {
         _SkillPowerValue = new SkillPowerValue[] { BladeWave };
-        return _SkillPowerValue[idSkillPower](caster);
+		return _SkillPowerValue[idSkillPower](statusCaster);
     }
 
 
-    private float BladeWave(GameObject caster) //id 0
+	private float BladeWave(Status statusCaster) //id 0
     {
-        Status _StatusCaster = (Status)caster.GetComponent(typeof(Status));
-		return _StatusCaster.getAttackDamage * (1.8f + _StatusCaster.energy / 1000.0f);
+		return statusCaster.getAttackDamage * (1.8f + statusCaster.energy / 1000.0f);
     }
 }

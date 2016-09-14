@@ -4,30 +4,27 @@ using System.Collections;
 
 public class StatusEnemy : Status {
 
+	private StatusPlayer targetStatus;
 
-	private NavMeshAgent _NavMeshAgent;
-	private MovementEnemy _MovementEnemy;
 	private CharacterController _CharacterController;
 	private MouseOverEnemy _MouseOverEnemy;
 	private GameObject collaiderMouse;
-	public float expReward = 20f;
+	public float expReward = 20.0f;
     public enum AiTypes { Melee, Range };
     public AiTypes AiType = AiTypes.Melee;
 
 	public enum modsDefinition { Rare, RareMinion, Champion, Normal, Custom };
 	public modsDefinition monsterModsDefinition;
 
-	// Use this for initialization
 	void Start () {
 		_Animator = gameObject.GetComponent<Animator>();
-		_MovementEnemy = gameObject.GetComponent<MovementEnemy>();
 		_CharacterController = gameObject.GetComponent<CharacterController>();
-        collaiderMouse = gameObject.transform.Find("ColliderMouse").gameObject;
+        collaiderMouse = gameObject.transform.FindChild("ColliderMouse").gameObject;
         _MouseOverEnemy = collaiderMouse.GetComponent<MouseOverEnemy>();
-		_NavMeshAgent = GetComponent<NavMeshAgent>();
 		CalculateStats ();
 		restoreHPandMP ();
-		popupColor = new Color (0.93f, 0.6f, 0.0f); 
+		popupColorBasic = new Color (0.93f, 0.6f, 0.0f); 
+		popupColorCritical = new Color(0.75f, 0.40f, 1.0f);
         popupDmgMotion = -2;
 
 
@@ -60,26 +57,34 @@ public class StatusEnemy : Status {
 //
 //		ImplementPresets();
 	}
-	
+
+	public StatusPlayer TargetStatus{
+		get{ return targetStatus; }
+		set{ targetStatus = value; }
+	}
+
+	public override void ReceivDamage (float amount, Status _Status)
+	{
+		if (targetStatus == null)
+			targetStatus = _Status as StatusPlayer;
+		base.ReceivDamage (amount, _Status);
+	}
 
 	protected override void Death(){
-		
+
 		_Animator.SetFloat("Move", 0.0f);
 		_Animator.SetBool ("BasicAttackBool", false);
 		_Animator.SetBool("DeadBool", true);
 
-        _NavMeshAgent.Stop();
-        _NavMeshAgent.enabled = false;
         _MouseOverEnemy.SetMaterialOutline(false);
-		_MovementEnemy.getStatusPlayer ().gainEXP (expReward, level);
-		_MovementEnemy.enabled = false;
 
 		dead = true;
+
+		targetStatus.gainEXP (expReward, level);
 
 		Destroy(_CharacterController);
 		Destroy(collaiderMouse);
 
-		transform.parent.GetComponent<SpawningEnemy>().enemyDie(gameObject.name);
 		Destroy (gameObject, 2.0f);
 	}
 

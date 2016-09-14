@@ -60,7 +60,8 @@ public class StatusPlayer : Status
         //		currExpToLevelUp = level * additionExp;
         CalculateStats();
         restoreHPandMP();
-        popupColor = Color.red;
+		popupColorBasic = Color.red;
+		popupColorCritical = Color.red;
         popupDmgMotion = 1;
         currExpToLevelUp = level * additionExp;
         _Animator.SetFloat("AttackSpeed", attackSpeed);
@@ -101,7 +102,7 @@ public class StatusPlayer : Status
 
             if (dot.elapsedTimeSinceActivation > dot.GetInterval)
             {
-                ReceivDamage(dot.GetOveralldamage / (int)(dot.Duration / dot.GetInterval));
+				ReceivDamage(dot.GetOveralldamage / (int)(dot.Duration / dot.GetInterval), popupColorBasic);
                 dot.elapsedTimeSinceActivation -= dot.GetInterval;
             }
             if (dot.elapsedTime > dot.Duration)
@@ -128,7 +129,7 @@ public class StatusPlayer : Status
 
             if (hot.elapsedTimeSinceActivation > hot.GetInterval)
             {
-                ReceivDamage(hot.GetOverallHeal / (int)(hot.Duration / hot.GetInterval));
+				ReceivDamage(hot.GetOverallHeal / (int)(hot.Duration / hot.GetInterval), popupColorBasic);
                 hot.elapsedTimeSinceActivation -= hot.GetInterval;
             }
             if (hot.elapsedTime > hot.Duration)
@@ -422,9 +423,9 @@ public class StatusPlayer : Status
     }
     #endregion
 
-    public override void ReceivDamage(float amount)
+	public override void ReceivDamage(float amount, Color colorPopup)
     {
-        base.ReceivDamage(amount);
+		base.ReceivDamage(amount, colorPopup);
         _PlayerGui.setGuiHealth(health, maxHealth);
     }
 
@@ -472,6 +473,7 @@ public class StatusPlayer : Status
 
         CalculateStats();
         restoreHPandMP();
+		_PlayerGui.setGuiHealth(health, maxHealth);
 
         if (StatsPanel != null && StatsPanel.gameObject.activeSelf)
         {
@@ -556,7 +558,7 @@ public class StatusPlayer : Status
                     eff.transform.parent = transform;
                 }
                 yield return new WaitForSeconds(0.7f); // Reduce HP  Every 0.7f Seconds
-                ReceivDamage(amount);
+				ReceivDamage(amount, popupColorBasic);
                 if (eff)
                 { //Destroy Effect if it still on a map
                     Destroy(eff.gameObject);

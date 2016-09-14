@@ -18,7 +18,7 @@ public class SkillCustom : MonoBehaviour
 
     //---Caster
     private GameObject caster = null;
-    private Status _StatusCaster;
+    private Status statusCaster;
     private Animator _Animator;
     private float skillPower;
     private SkillPowerDatabase _SkillPowerComponent;
@@ -30,6 +30,7 @@ public class SkillCustom : MonoBehaviour
     private GameObject ObjectVisualizationInstance;
     private bool isFinishedVisualization = false;
 
+	private MaterialGradientSkill gradientSkill;
 
     #region get/set
 
@@ -38,6 +39,11 @@ public class SkillCustom : MonoBehaviour
         get { return caster; }
         set { caster = value; }
     }
+	public Status StatusCaster
+	{
+		get { return statusCaster; }
+		set { statusCaster = value; }
+	}
     public float SkillPower
     {
         get { return skillPower; }
@@ -87,13 +93,14 @@ public class SkillCustom : MonoBehaviour
 
         //--ActivateVisualization()
         //---Mesh
-        PositionCastSpell = caster.transform.Find("SpellCastPoint");
-        ObjectVisualizationInstance = (GameObject)Instantiate(ObjectVisualization, PositionCastSpell.position, PositionCastSpell.rotation);
+//        PositionCastSpell = caster.transform.Find("SpellCastPoint");
+//        ObjectVisualizationInstance = (GameObject)Instantiate(ObjectVisualization, PositionCastSpell.position, PositionCastSpell.rotation);
         //ObjectVisualizationInstance.GetComponent<OnTrigger>().AfterCollision += new OnTriggerEventHandler(ForwardCollisions);
         //----Destroy after CountdownVisualization time
-        Destroy(ObjectVisualizationInstance, CountdownVisualization);
+        //Destroy(ObjectVisualizationInstance, CountdownVisualization);
 
-
+		ObjectVisualizationInstance.transform.rotation = PositionCastSpell.rotation;
+		ObjectVisualizationInstance.transform.position = PositionCastSpell.position;
     
     }
 
@@ -104,16 +111,20 @@ public class SkillCustom : MonoBehaviour
             if (this.caster == null)
             {
                 this.caster = caster;
-                _StatusCaster = (Status)caster.GetComponent(typeof(Status));
+                statusCaster = (Status)caster.GetComponent(typeof(Status));
                 _Animator = caster.GetComponent<Animator>();
             }
             _Animator.SetFloat("UseSkill",SkillAnimationID);
-            InvokeRepeating("Activate", 0, SpeedMultiplier / _StatusCaster.getAttackSpeed);
-            skillPower = _SkillPowerComponent.getSkillPower(caster);
+			InvokeRepeating("Activate", 0, SpeedMultiplier / statusCaster.getAttackSpeed);
+			skillPower = _SkillPowerComponent.getSkillPower(statusCaster);
             foreach (SkillComponentCustom component in SkillComponents)
             {
                 component.Initialize();
             }
+			PositionCastSpell = caster.transform.Find("SpellCastPoint");
+			ObjectVisualizationInstance = (GameObject)Instantiate(ObjectVisualization);
+			gradientSkill = ObjectVisualizationInstance.transform.GetChild(0).GetChild(0).GetComponent<MaterialGradientSkill> ();
+			gradientSkill.TimeMultiplier = SpeedMultiplier * statusCaster.getAttackSpeed;
         }
         else
         {
@@ -128,6 +139,8 @@ public class SkillCustom : MonoBehaviour
     {
         _Animator.SetFloat("UseSkill", 0.0f);
         CancelInvoke("Activate");
+		gradientSkill.loop = false;
+		Destroy(ObjectVisualizationInstance, CountdownVisualization);
     }
 
     //private void ForwardCollisions(GameObject sender, List<GameObject> targets, Vector3 pos)

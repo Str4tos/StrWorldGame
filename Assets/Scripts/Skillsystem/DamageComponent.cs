@@ -26,7 +26,7 @@ using Utilities;
                 }
 
                 Debug.Log(obj);
-			obj.GetComponent<StatusEnemy>().ReceivDamage(Damage);
+			obj.GetComponent<StatusEnemy>().ReceivDamage(Damage, Color.red);
                 finished = true;
                 Debug.Log("Damange Component finished");
 
