@@ -95,7 +95,7 @@ public class Status : MonoBehaviour
 			Color tempColor = popupColor;
             if (buffBarrier)
                 amount = (amount * buffBarrPercent);
-            amount /= defense;
+            amount -= defense;
 
 			//Chance 0-10% more dmg
 			amount *= 1 + Random.value / 20f;

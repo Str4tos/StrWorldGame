@@ -472,6 +472,7 @@ public class StatusPlayer : Status
 
         CalculateStats();
         restoreHPandMP();
+
         if (StatsPanel != null && StatsPanel.gameObject.activeSelf)
         {
             RefreshStatsInInventory(StatsPanel);
@@ -876,6 +877,8 @@ public class StatusPlayer : Status
 	*/
     public void RefreshStatsInInventory(Transform statsTran)
     {
+        if (statsTran == null)
+            return;
         if (StatsPanel == null)
             StatsPanel = statsTran;
         RefreshExpLvl();
@@ -888,27 +891,37 @@ public class StatusPlayer : Status
 
     private void RefreshExpLvl()
     {
+        if (StatsPanel == null)
+            return;
         StatsPanel.GetChild(0).GetComponent<Text>().text = "Level: " + level;
         StatsPanel.GetChild(2).GetComponent<Text>().text = "Exp: " + currExp + "/" + currExpToLevelUp;
     }
     private void RefreshStrenght()
     {
+        if (StatsPanel == null)
+            return;
         StatsPanel.GetChild(3).GetChild(1).GetComponent<Text>().text = strenght.ToString();
         StatsPanel.GetChild(4).GetComponent<Text>().text = "Damage: " + attackDmg;
     }
     private void RefreshAgility()
     {
+        if (StatsPanel == null)
+            return;
         StatsPanel.GetChild(5).GetChild(1).GetComponent<Text>().text = agility.ToString();
         StatsPanel.GetChild(6).GetComponent<Text>().text = "Defense: " + defense;
         StatsPanel.GetChild(7).GetComponent<Text>().text = "Attack speed: " + (attackSpeed * 10f).ToString("F");
     }
     private void RefreshVitality()
     {
+        if (StatsPanel == null)
+            return;
         StatsPanel.GetChild(8).GetChild(1).GetComponent<Text>().text = vitality.ToString();
         StatsPanel.GetChild(9).GetComponent<Text>().text = "Health: " + health.ToString("#") + "/" + maxHealth;
     }
     private void RefreshEnergy()
     {
+        if (StatsPanel == null)
+            return;
         StatsPanel.GetChild(10).GetChild(1).GetComponent<Text>().text = energy.ToString();
         StatsPanel.GetChild(11).GetComponent<Text>().text = "Mana: " + mana.ToString("#") + "/" + maxMana;
         StatsPanel.GetChild(12).GetComponent<Text>().text = "Wizardy Dmg: " + wizardyDmg;
@@ -916,6 +929,8 @@ public class StatusPlayer : Status
 
     private void checkForPoints()
     {
+        if (StatsPanel == null)
+            return;
         Transform PointTran = StatsPanel.GetChild(1);
         PointTran.GetComponent<Text>().text = "Point " + statPoints;
         if (statPoints > 0)

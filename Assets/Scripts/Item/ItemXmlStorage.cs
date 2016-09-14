@@ -202,7 +202,7 @@ public class ItemXmlStorage : MonoBehaviour
     private XmlReader GetXmlReader(int id)
     {
         int numFile = id / 50;
-        XmlReader xmlReader = XmlReader.Create(Application.dataPath + "/Resources/XML/" + arrayFiles[numFile]);
+        XmlReader xmlReader = XmlReader.Create(Application.dataPath + "/Resources/XML/" + arrayFiles[numFile]);  
         xmlReader.MoveToContent();
         return xmlReader;
     }

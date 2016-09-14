@@ -25,7 +25,7 @@ public class SkillCustom : MonoBehaviour
 
     //---Visualization
     public GameObject ObjectVisualization;
-    public float CountdownVisualization = 3f; //to destroy visualization
+    public float CountdownVisualization = 1.5f; //to destroy visualization
     private Transform PositionCastSpell;
     private GameObject ObjectVisualizationInstance;
     private bool isFinishedVisualization = false;
@@ -72,12 +72,6 @@ public class SkillCustom : MonoBehaviour
 
     private void Activate()
     {
-        // If Mouse OnGui
-        if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
-        {
-            StopSkill();
-        }
-
         //--Component apply
         componentError = null;
         foreach (SkillComponentCustom component in SkillComponents)
