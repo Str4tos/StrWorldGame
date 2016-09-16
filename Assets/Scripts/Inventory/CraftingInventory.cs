@@ -2,9 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class StorageInventory : Inventory {
+public class CraftingInventory : Inventory {
 
-	// Use this for initialization
+
     protected override void Start()
     {
         Initiate();
@@ -12,8 +12,14 @@ public class StorageInventory : Inventory {
         
         typeParentInv = TypeParentInv.storage;
 	}
-	
-	// Update is called once per frame
+
+    public void OpenCraftInventory(ItemOther recipeItem)
+    {
+
+
+        OpenInventory();
+    }
+
 	void Update () {
 	
 	}

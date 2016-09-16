@@ -1,0 +1,10 @@
+<list>
+  <recipe recipe_id="0" result_id="32" chance="80">
+    <ingridien id="2" number="1"/>
+    <ingridien id="4" number="2"/>
+  </recipe>
+  <recipe recipe_id="1" result_id="3" chance="80">
+    <ingridien id="4" number="1"/>
+    <ingridien id="3" number="2"/>
+  </recipe>
+</list>

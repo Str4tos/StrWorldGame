@@ -1,712 +1,655 @@
 ﻿using UnityEngine;
 using System.Collections;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-using UnityEngine.UI;
 using System.Collections.Generic;
+using System.Xml.Serialization;
 
 public class Inventory : MonoBehaviour
 {
-    //Prefabs
-    [SerializeField]
-    private GameObject prefabCanvasWithPanel;
-    [SerializeField]
-    private GameObject prefabSlot;
-    [SerializeField]
-    private GameObject prefabSlotContainer;
-    [SerializeField]
-    private GameObject prefabItem;
-    [SerializeField]
-    private GameObject prefabDraggingItemContainer;
-    [SerializeField]
-    private GameObject prefabPanel;
 
-    //Itemdatabase
-    [SerializeField]
-    private ItemDataBaseList itemDatabase;
+    protected GameObject prefabItem;
 
-    //GameObjects which are alive
-    [SerializeField]
-    private string inventoryTitle;
-    [SerializeField]
-    private RectTransform PanelRectTransform;
-    [SerializeField]
-    private Image PanelImage;
-    [SerializeField]
-    private GameObject SlotContainer;
-    [SerializeField]
-    private GameObject DraggingItemContainer;
-    [SerializeField]
-    private RectTransform SlotContainerRectTransform;
-    [SerializeField]
-    private GridLayoutGroup SlotGridLayout;
-    [SerializeField]
-    private RectTransform SlotGridRectTransform;
+    //Items
+    protected List<ItemEquip> itemsEquipInInv;
+    protected List<ItemConsume> itemsConsumeInInv;
+    protected List<ItemOther> itemsOtherInInv;
+    protected List<ItemTypesData> itemTypesDB;
 
-    //Inventory Settings
-    [SerializeField]
-    public bool mainInventory;
-    [SerializeField]
-    public List<Item> ItemsInInventory = new List<Item>();
-    [SerializeField]
-    public int height;
-    [SerializeField]
-    public int width;
-    [SerializeField]
-    public bool stackable;
-    [SerializeField]
-    public static bool inventoryOpen;
+    protected GameObject slotContainer;
+    protected bool isActive;
 
 
-    //GUI Settings
-    [SerializeField]
-    public int slotSize;
-    [SerializeField]
-    public int iconSize;
-    [SerializeField]
-    public int paddingBetweenX;
-    [SerializeField]
-    public int paddingBetweenY;
-    [SerializeField]
-    public int paddingLeft;
-    [SerializeField]
-    public int paddingRight;
-    [SerializeField]
-    public int paddingBottom;
-    [SerializeField]
-    public int paddingTop;
-    [SerializeField]
-    public int positionNumberX;
-    [SerializeField]
-    public int positionNumberY;
-    
-	public int cash = 0;
-	private Text txtCash;
-	private StatusPlayer _StatusPlayer;
+    public delegate void InventoryEvent();
+    public event InventoryEvent InventoryInit;
+    public event InventoryEvent InventoryOpen;
 
-    //InputManager inputManagerDatabase;
+    public enum TypeParentInv { bag, equip, hotbar, storage, shop };
+    [HideInInspector]
+    public TypeParentInv typeParentInv;
 
-    //event delegates for consuming, gearing
-    public delegate void ItemDelegate(Item item);
-    public static event ItemDelegate ItemConsumed;
-    public static event ItemDelegate ItemEquip;
-    public static event ItemDelegate UnEquipItem;
-
-    public delegate void InventoryOpened();
-    public static event InventoryOpened InventoryOpen;
-    public static event InventoryOpened AllInventoriesClosed;
-
-    void Start()
+    public bool IsActive()
     {
-        if (transform.GetComponent<Hotbar>() == null)
-            this.gameObject.SetActive(false);
-		if(mainInventory)
-			txtCash = gameObject.transform.Find("CashCanvas/LabelCash").GetComponent<Text>();
-		_StatusPlayer = GameObject.FindWithTag ("Player").GetComponent<StatusPlayer>();
-        updateItemList();
-
-
-        //if (!player)
-        //{
-        //    player = this.gameObject;
-        //}
-        //ItemDataC dataItem = database.GetComponent<ItemDataC>();
-        //player.GetComponent<StatusC>().addAtk = 0;
-        //player.GetComponent<StatusC>().addDef = 0;
-        //player.GetComponent<StatusC>().addMatk = 0;
-        //player.GetComponent<StatusC>().addMdef = 0;
-        //player.GetComponent<StatusC>().weaponAtk = 0;
-        //player.GetComponent<StatusC>().weaponMatk = 0;
-        ////Set New Variable of Weapon
-        //player.GetComponent<StatusC>().weaponAtk += dataItem.equipment[weaponEquip].attack;
-        //player.GetComponent<StatusC>().addDef += dataItem.equipment[weaponEquip].defense;
-        //player.GetComponent<StatusC>().weaponMatk += dataItem.equipment[weaponEquip].magicAttack;
-        //player.GetComponent<StatusC>().addMdef += dataItem.equipment[weaponEquip].magicDefense;
-        ////Set New Variable of Armor
-        //player.GetComponent<StatusC>().weaponAtk += dataItem.equipment[armorEquip].attack;
-        //player.GetComponent<StatusC>().addDef += dataItem.equipment[armorEquip].defense;
-        //player.GetComponent<StatusC>().weaponMatk += dataItem.equipment[armorEquip].magicAttack;
-        //player.GetComponent<StatusC>().addMdef += dataItem.equipment[armorEquip].magicDefense;
-        //player.GetComponent<StatusC>().CalculateStatus();
-
-        //inputManagerDatabase = (InputManager)Resources.Load("InputManager");
+        return isActive;
     }
 
-    public void sortItems()
+    protected virtual void Start()
     {
-        int empty = -1;
-        for (int i = 0; i < SlotContainer.transform.childCount; i++)
+        slotContainer = transform.Find("Slots").gameObject;
+        prefabItem = Resources.Load("Prefabs/Inventory/Item") as GameObject;
+        isActive = false;
+        gameObject.SetActive(false);
+
+        if (InventoryInit != null)
+            InventoryInit();
+    }
+    protected void Initiate()
+    {
+        itemsEquipInInv = new List<ItemEquip>();
+        itemsConsumeInInv = new List<ItemConsume>();
+        itemsOtherInInv = new List<ItemOther>();
+        itemTypesDB = new List<ItemTypesData>();
+    }
+
+    public virtual void OpenInventory()
+    {
+        gameObject.SetActive(true);
+        isActive = true;
+        //updateCashValue();
+        //if (this.tag == "EquipmentSystem")
+        //{
+        //    _StatusPlayer.RefreshStatsInInventory(this.gameObject.transform.Find("Stats"));
+        //}
+        if (InventoryOpen != null)
         {
-            if (SlotContainer.transform.GetChild(i).childCount == 0 && empty == -1)
-                empty = i;
+
+            InventoryOpen();
+        }
+    }
+
+    public void CloseInventory()
+    {
+        gameObject.SetActive(false);
+        isActive = false;
+        //checkIfAllInventoryClosed();
+    }
+
+    public void LoadSerialization(InventoryData loadedInventory)
+    {
+        itemsEquipInInv = loadedInventory.itemsEquipInInv;
+        itemsConsumeInInv = loadedInventory.itemsConsumeInInv;
+        itemsOtherInInv = loadedInventory.itemsOtherInInv;
+        SyncItemsInInventory();
+    }
+
+    #region add/delete items
+
+    protected bool SyncItemsInInventory()
+    {
+        foreach (ItemEquip ItemEquip in itemsEquipInInv)
+            AddItemInObj(ItemEquip, ItemEquip.indexItemInList);
+        foreach (ItemConsume itemConsume in itemsConsumeInInv)
+            AddItemInObj(itemConsume, itemConsume.indexItemInList);
+        foreach (ItemOther itemOther in itemsOtherInInv)
+            AddItemInObj(itemOther, itemOther.indexItemInList);
+        return true;
+    }
+
+    /// <summary>
+    /// Add item to inventory search by id in free slot./
+    /// Returns: True - successfully | False - fail
+    /// </summary>
+    /// <param name="id">Id item</param>
+    /// <param name="quantity">Quantity items</param>
+    /// <returns>True - successfully | False - fail</returns>
+    public bool AddItemToInventory(int id, int quantity)
+    {
+        ItemType tempItemType = GetItemTypeByIdInInv(id);
+        switch (tempItemType)
+        {
+            case ItemType.Other:
+                return AddOthInInvExtension(id, quantity);
+            case ItemType.Consume:
+                return AddConsInInvExtension(id, quantity);
+            case ItemType.Equip:
+                return AddEquInInvExtension(id, quantity, 0);
+        }
+        return false;
+    }
+    /// <summary>
+    /// Add equip item to inventory in free slot./
+    /// Returns: True - successfully | False - fail
+    /// </summary>
+    /// <param name="itemEquip">Equip item</param>
+    /// <returns>True - successfully | False - fail</returns>
+    public bool AddItemToInventory(ItemEquip itemEquip)
+    {
+        List<int> freeSlotsIndex = GetAllFreeIndexInInventory();
+        if (freeSlotsIndex.Count == 0)
+            return false;
+        AddItemInSlot(itemEquip, freeSlotsIndex[0], true);
+        return true;
+    }
+    /// <summary>
+    /// Add consume item to inventory in free slot./
+    /// Returns: True - successfully | False - fail
+    /// </summary>
+    /// <param name="itemConsume">Consume item</param>
+    /// <returns>True - successfully | False - fail</returns>
+    public bool AddItemToInventory(ItemConsume itemConsume)
+    {
+        ItemConsume tempItemConsume = new ItemConsume();
+        List<int> freeSlotsIndex = GetAllFreeIndexInInventory();
+        XmlStorageItem xmlStorage = new XmlStorageItem();
+        int maxInStack = xmlStorage.GetConsumeMaxInStackById(itemConsume.id);
+
+        foreach (ItemConsume itemConsumeInInv in itemsConsumeInInv)
+            if (itemConsumeInInv.id == itemConsume.id)
+            {
+                tempItemConsume = itemConsumeInInv;
+                break;
+            }
+
+        if (tempItemConsume.IsEmpty())
+        {
+            if (freeSlotsIndex.Count == 0)
+                return false;
+            return AddConsInInvExtension(itemConsume, 0, maxInStack, true, freeSlotsIndex);
+        }
+        else
+        {
+            return AddConsInInvExtension(tempItemConsume, itemConsume.quantity, maxInStack, false, freeSlotsIndex);
+        }
+    }
+    /// <summary>
+    /// Add other item to inventory in free slot./
+    /// Returns: True - successfully | False - fail
+    /// </summary>
+    /// <param name="itemOther">Other item</param>
+    /// <returns>True - successfully | False - fail</returns>
+    public bool AddItemToInventory(ItemOther itemOther)
+    {
+        ItemOther tempItemOther = new ItemOther();
+        //if item has already in inventory
+        foreach (ItemOther itemOtherinInv in itemsOtherInInv)
+            if (itemOtherinInv.id == itemOther.id)
+            {
+                tempItemOther = itemOtherinInv;
+                break;
+            }
+
+        if (tempItemOther.IsEmpty())
+        {
+            List<int> freeSlotsIndex = GetAllFreeIndexInInventory();
+            if (freeSlotsIndex.Count == 0)
+                return false;
+            AddItemInSlot(itemOther, freeSlotsIndex[0], true);
+        }
+        else
+        {
+            //update quntity item ha already
+            tempItemOther.quantity += itemOther.quantity;
+            UpdateItemObj(tempItemOther.indexItemInList);
+        }
+        return true;
+    }
+    /// <summary>
+    /// Add equip item to inventory in indexSlot./
+    /// Returns: True - successfully | False - slot not free
+    /// </summary>
+    /// <param name="itemEquip">Equip item</param>
+    /// <param name="indexSlot">Index Slot</param>
+    /// <param name="checkIsVoid">Check is free iindex in inventory</param>
+    /// <returns>True - successfully | False - fail</returns>
+    public bool AddItemToInventory(ItemEquip itemEquip, int indexSlot, bool checkIsVoid)
+    {
+        if (checkIsVoid && !IsFreeIndexInInventory(indexSlot))
+            return false;
+        AddItemInSlot(itemEquip, indexSlot, true);
+        return true;
+    }
+    /// <summary>
+    /// Add consume item to inventory in indexSlot./
+    /// Returns: True - successfully | False - slot not free
+    /// </summary>
+    /// <param name="itemConsume">Consume item</param>
+    /// <param name="indexSlot">Index Slot</param>
+    /// <param name="checkIsVoid">Check is free iindex in inventory</param>
+    /// <returns>True - successfully | False - fail</returns>
+    public bool AddItemToInventory(ItemConsume itemConsume, int indexSlot, bool checkIsVoid)
+    {
+        if (checkIsVoid && !IsFreeIndexInInventory(indexSlot))
+            return false;
+        AddItemInSlot(itemConsume, indexSlot, true);
+        return true;
+    }
+    /// <summary>
+    /// Add other item to inventory in indexSlot./
+    /// Returns: True - successfully | False - slot not free
+    /// </summary>
+    /// <param name="itemOther">Other item</param>
+    /// <param name="indexSlot">Index Slot</param>
+    /// <param name="checkIsVoid">Check is free iindex in inventory</param>
+    /// <returns>True - successfully | False - fail</returns>
+    public bool AddItemToInventory(ItemOther itemOther, int indexSlot, bool checkIsVoid)
+    {
+        if (checkIsVoid && !IsFreeIndexInInventory(indexSlot))
+            return false;
+        AddItemInSlot(itemOther, indexSlot, true);
+        return true;
+    }
+
+
+    /// <summary>
+    /// Delete item(stack) for this inventory
+    /// </summary>
+    /// <param name="itemOther">Specimen item in inventory</param>
+    public void DelItemFromInventory(Item item)
+    {
+        //If item is Equip
+        for (int i = 0; i < itemsEquipInInv.Count; i++)
+            if (itemsEquipInInv[i].indexItemInList == item.indexItemInList)
+            {
+                RemoveItemFromInvByIndex(i, item.itemType);
+                return;
+            }
+
+        //If item is Consume
+        for (int i = 0; i < itemsConsumeInInv.Count; i++)
+            if (itemsConsumeInInv[i].indexItemInList == item.indexItemInList)
+            {
+                RemoveItemFromInvByIndex(i, item.itemType);
+                return;
+            }
+
+        //If item is Other
+        for (int i = 0; i < itemsOtherInInv.Count; i++)
+            if (itemsOtherInInv[i].indexItemInList == item.indexItemInList)
+            {
+                RemoveItemFromInvByIndex(i, item.itemType);
+                return;
+            }
+    }
+    public void DelItemFromInventory(ItemEquip itemEquip)
+    {
+        for (int i = 0; i < itemsEquipInInv.Count; i++)
+            if (itemsEquipInInv[i].indexItemInList == itemEquip.indexItemInList)
+                RemoveItemFromInvByIndex(i, itemEquip.itemType);
+    }
+    public void DelItemFromInventory(ItemConsume itemConsume)
+    {
+        for (int i = 0; i < itemsConsumeInInv.Count; i++)
+            if (itemsConsumeInInv[i].indexItemInList == itemConsume.indexItemInList)
+                RemoveItemFromInvByIndex(i, itemConsume.itemType);
+    }
+    public void DelItemFromInventory(ItemOther itemOther)
+    {
+        for (int i = 0; i < itemsOtherInInv.Count; i++)
+            if (itemsOtherInInv[i].indexItemInList == itemOther.indexItemInList)
+                RemoveItemFromInvByIndex(i, itemOther.itemType);
+    }
+    /// <summary>
+    /// Delete item by id from inventory./
+    /// Returns: True - successfully | False - fail
+    /// </summary>
+    /// <param name="id">Id item</param>
+    /// <param name="quantity">Quantity items</param>
+    /// <returns>True - successfully | False - fail</returns>
+    public bool DelItemFromInventory(int id, int quantity)
+    {
+        int totalQuantity = 0;
+        Hashtable items = new Hashtable();
+        ItemType tempTypeItem = GetItemTypeByIdInInv(id);
+        switch (tempTypeItem)
+        {
+            case ItemType.Other:
+                for (int i = 0; i < itemsOtherInInv.Count; i++)
+                    if (itemsOtherInInv[i].id == id)
+                    {
+                        totalQuantity += itemsOtherInInv[i].quantity;
+                        items[i] = itemsOtherInInv[i].quantity;
+                    }
+                break;
+            case ItemType.Consume:
+                for (int i = 0; i < itemsConsumeInInv.Count; i++)
+                    if (itemsConsumeInInv[i].id == id)
+                    {
+                        totalQuantity += itemsConsumeInInv[i].quantity;
+                        items[i] = itemsConsumeInInv[i].quantity;
+                    }
+                break;
+            case ItemType.Equip:
+                for (int i = 0; i < itemsEquipInInv.Count; i++)
+                    if (itemsEquipInInv[i].id == id)
+                    {
+                        totalQuantity += itemsEquipInInv[i].quantity;
+                        items[i] = itemsEquipInInv[i].quantity;
+                    }
+                break;
+        }
+
+        if (totalQuantity < quantity)
+            return false;
+
+        foreach (DictionaryEntry item in items)
+        {
+            if (quantity < (int)item.Value)
+            {
+                IncOrDecQuantityItemByIndex((int)item.Key, -quantity, tempTypeItem);
+                return true;
+            }
             else
             {
-                if (empty > -1)
-                {
-                    if (SlotContainer.transform.GetChild(i).childCount != 0)
-                    {
-                        RectTransform rect = SlotContainer.transform.GetChild(i).GetChild(0).GetComponent<RectTransform>();
-                        SlotContainer.transform.GetChild(i).GetChild(0).transform.SetParent(SlotContainer.transform.GetChild(empty).transform);
-                        rect.localPosition = Vector3.zero;
-                        i = empty + 1;
-                        empty = i;
-                    }
-                }
+                quantity -= (int)item.Value;
+                RemoveItemFromInvByIndex((int)item.Key, tempTypeItem);
             }
-        }
-    }
-
-    void Update()
-    {
-        updateItemIndex();
-    }
-
-    public void OnUpdateItemList()
-    {
-        updateItemList();
-    }
-
-    public void closeInventory()
-    {
-        this.gameObject.SetActive(false);
-        checkIfAllInventoryClosed();
-    }
-
-    public void openInventory()
-    {
-        this.gameObject.SetActive(true);
-		updateCashValue ();
-		if (this.tag == "EquipmentSystem") {
-			_StatusPlayer.RefreshStatsInInventory (this.gameObject.transform.Find ("Stats"));
-		}
-		if (InventoryOpen != null) {
-			
-			InventoryOpen ();
-		}
-    }
-
-    public void checkIfAllInventoryClosed()
-    {
-        GameObject canvas = GameObject.FindGameObjectWithTag("MainCanvas");
-
-        for (int i = 0; i < canvas.transform.childCount; i++)
-        {
-            GameObject child = canvas.transform.GetChild(i).gameObject;
-            if (!child.activeSelf && (child.tag == "EquipmentSystem" || child.tag == "Panel" || child.tag == "MainInventory" || child.tag == "CraftSystem"))
+            if (quantity == 0)
             {
-                if (AllInventoriesClosed != null && i == canvas.transform.childCount - 1)
-                    AllInventoriesClosed();
-            }
-            else if (child.activeSelf && (child.tag == "EquipmentSystem" || child.tag == "Panel" || child.tag == "MainInventory" || child.tag == "CraftSystem"))
-                break;
-
-            else if (i == canvas.transform.childCount - 1)
-            {
-                if (AllInventoriesClosed != null)
-                    AllInventoriesClosed();
-            }
-
-
-        }
-    }
-
-
-
-
-    public void ConsumeItem(Item item)
-    {
-        if (ItemConsumed != null)
-            ItemConsumed(item);
-    }
-
-    public void EquiptItem(Item item)
-    {
-        if (ItemEquip != null)
-            ItemEquip(item);
-    }
-
-    public void UnEquipItem1(Item item)
-    {
-        if (UnEquipItem != null)
-            UnEquipItem(item);
-    }
-
-
-
-    public void setImportantVariables()
-    {
-        PanelRectTransform = GetComponent<RectTransform>();
-        SlotContainer = transform.GetChild(1).gameObject;
-        SlotGridLayout = SlotContainer.GetComponent<GridLayoutGroup>();
-        SlotGridRectTransform = SlotContainer.GetComponent<RectTransform>();
-    }
-
-    public void updateItemList()
-    {
-        ItemsInInventory.Clear();
-        for (int i = 0; i < SlotContainer.transform.childCount; i++)
-        {
-            Transform trans = SlotContainer.transform.GetChild(i);
-            if (trans.childCount != 0)
-            {
-                ItemsInInventory.Add(trans.GetChild(0).GetComponent<ItemOnObject>().item);
-            }
-        }
-		if (mainInventory) {
-
-		}
-
-    }
-
-	public void updateCashValue(){
-		if (mainInventory) {
-			txtCash.text = "" + cash;
-		}
-	}
-
-	public void updateCashValue(int cash){
-        if (mainInventory)
-        {
-            this.cash = cash;
-            txtCash.text = "" + cash;
-        }
-	}
-
-  
-
-    //public void updateSlotAmount(int width, int height)
-    //{
-    //    if (prefabSlot == null)
-    //        prefabSlot = Resources.Load("Prefabs/Slot - Inventory") as GameObject;
-
-    //    if (SlotContainer == null)
-    //    {
-    //        SlotContainer = (GameObject)Instantiate(prefabSlotContainer);
-    //        SlotContainer.transform.SetParent(PanelRectTransform.transform);
-    //        SlotContainerRectTransform = SlotContainer.GetComponent<RectTransform>();
-    //        SlotGridRectTransform = SlotContainer.GetComponent<RectTransform>();
-    //        SlotGridLayout = SlotContainer.GetComponent<GridLayoutGroup>();
-    //    }
-
-    //    if (SlotContainerRectTransform == null)
-    //        SlotContainerRectTransform = SlotContainer.GetComponent<RectTransform>();
-
-    //    SlotContainerRectTransform.localPosition = Vector3.zero;
-
-    //    List<Item> itemsToMove = new List<Item>();
-    //    List<GameObject> slotList = new List<GameObject>();
-    //    foreach (Transform child in SlotContainer.transform)
-    //    {
-    //        if (child.tag == "Slot") { slotList.Add(child.gameObject); }
-    //    }
-
-    //    while (slotList.Count > width * height)
-    //    {
-    //        GameObject go = slotList[slotList.Count - 1];
-    //        ItemOnObject itemInSlot = go.GetComponentInChildren<ItemOnObject>();
-    //        if (itemInSlot != null)
-    //        {
-    //            itemsToMove.Add(itemInSlot.item);
-    //            ItemsInInventory.Remove(itemInSlot.item);
-    //        }
-    //        slotList.Remove(go);
-    //        DestroyImmediate(go);
-    //    }
-
-    //    if (slotList.Count < width * height)
-    //    {
-    //        for (int i = slotList.Count; i < (width * height); i++)
-    //        {
-    //            GameObject Slot = (GameObject)Instantiate(prefabSlot);
-    //            Slot.name = (slotList.Count + 1).ToString();
-    //            Slot.transform.SetParent(SlotContainer.transform);
-    //            slotList.Add(Slot);
-    //        }
-    //    }
-
-    //    if (itemsToMove != null && ItemsInInventory.Count < width * height)
-    //    {
-    //        foreach (Item i in itemsToMove)
-    //        {
-    //            addItemToInventory(i.id);
-    //        }
-    //    }
-
-    //    setImportantVariables();
-    //}
-
-    //public void updateSlotAmount()
-    //{
-
-    //    if (prefabSlot == null)
-    //        prefabSlot = Resources.Load("Prefabs/Slot - Inventory") as GameObject;
-
-    //    if (SlotContainer == null)
-    //    {
-    //        SlotContainer = (GameObject)Instantiate(prefabSlotContainer);
-    //        SlotContainer.transform.SetParent(PanelRectTransform.transform);
-    //        SlotContainerRectTransform = SlotContainer.GetComponent<RectTransform>();
-    //        SlotGridRectTransform = SlotContainer.GetComponent<RectTransform>();
-    //        SlotGridLayout = SlotContainer.GetComponent<GridLayoutGroup>();
-    //    }
-
-    //    if (SlotContainerRectTransform == null)
-    //        SlotContainerRectTransform = SlotContainer.GetComponent<RectTransform>();
-    //    SlotContainerRectTransform.localPosition = Vector3.zero;
-
-    //    List<Item> itemsToMove = new List<Item>();
-    //    List<GameObject> slotList = new List<GameObject>();
-    //    foreach (Transform child in SlotContainer.transform)
-    //    {
-    //        if (child.tag == "Slot") { slotList.Add(child.gameObject); }
-    //    }
-
-    //    while (slotList.Count > width * height)
-    //    {
-    //        GameObject go = slotList[slotList.Count - 1];
-    //        ItemOnObject itemInSlot = go.GetComponentInChildren<ItemOnObject>();
-    //        if (itemInSlot != null)
-    //        {
-    //            itemsToMove.Add(itemInSlot.item);
-    //            ItemsInInventory.Remove(itemInSlot.item);
-    //        }
-    //        slotList.Remove(go);
-    //        DestroyImmediate(go);
-    //    }
-
-    //    if (slotList.Count < width * height)
-    //    {
-    //        for (int i = slotList.Count; i < (width * height); i++)
-    //        {
-    //            GameObject Slot = (GameObject)Instantiate(prefabSlot);
-    //            Slot.name = (slotList.Count + 1).ToString();
-    //            Slot.transform.SetParent(SlotContainer.transform);
-    //            slotList.Add(Slot);
-    //        }
-    //    }
-
-    //    if (itemsToMove != null && ItemsInInventory.Count < width * height)
-    //    {
-    //        foreach (Item i in itemsToMove)
-    //        {
-    //            addItemToInventory(i.id);
-    //        }
-    //    }
-
-    //    setImportantVariables();
-    //}
-
-  
-   
-
-    void updateItemSize()
-    {
-        for (int i = 0; i < SlotContainer.transform.childCount; i++)
-        {
-            if (SlotContainer.transform.GetChild(i).childCount > 0)
-            {
-                SlotContainer.transform.GetChild(i).GetChild(0).GetComponent<RectTransform>().sizeDelta = new Vector2(slotSize, slotSize);
-                SlotContainer.transform.GetChild(i).GetChild(0).GetChild(2).GetComponent<RectTransform>().sizeDelta = new Vector2(slotSize, slotSize);
-            }
-
-        }
-    }
-
-    public bool checkIfItemAllreadyExist(int itemID, int itemValue)
-    {
-        updateItemList();
-        int stack;
-        for (int i = 0; i < ItemsInInventory.Count; i++)
-        {
-            if (ItemsInInventory[i].id == itemID)
-            {
-                stack = ItemsInInventory[i].quantity + itemValue;
-                if (stack <= ItemsInInventory[i].maxInStack)
-                {
-                    ItemsInInventory[i].quantity = stack;
-                    GameObject temp = getItemGameObject(ItemsInInventory[i]);
-                    if (temp != null && temp.GetComponent<ConsumeItem>().duplication != null)
-                        temp.GetComponent<ConsumeItem>().duplication.GetComponent<ItemOnObject>().item.quantity = stack;
-                    return true;
-                }
+                return true;
             }
         }
         return false;
     }
 
-    public void addItemToInventory(int id)
+    public virtual ItemEquip GetEquipItem(Item item)
     {
-        for (int i = 0; i < SlotContainer.transform.childCount; i++)
-        {
-            if (SlotContainer.transform.GetChild(i).childCount == 0)
-            {
-                GameObject item = (GameObject)Instantiate(prefabItem);
-                item.GetComponent<ItemOnObject>().item = itemDatabase.getItemByID(id);
-                item.transform.SetParent(SlotContainer.transform.GetChild(i));
-                item.GetComponent<RectTransform>().localPosition = Vector3.zero;
- //Stratos               item.transform.GetChild(0).GetComponent<Image>().sprite = item.GetComponent<ItemOnObject>().item.itemIcon;
-                item.GetComponent<ItemOnObject>().item.indexItemInList = ItemsInInventory.Count - 1;
-                break;
-            }
-        }
-
-        stackableSettings();
-        updateItemList();
-
-    }
-
-    public GameObject addItemToInventory(int id, int value)
-    {
-        for (int i = 0; i < SlotContainer.transform.childCount; i++)
-        {
-            if (SlotContainer.transform.GetChild(i).childCount == 0)
-            {
-                GameObject item = (GameObject)Instantiate(prefabItem);
-                ItemOnObject itemOnObject = item.GetComponent<ItemOnObject>();
-                itemOnObject.item = itemDatabase.getItemByID(id);
-                if (itemOnObject.item.quantity <= itemOnObject.item.maxInStack && value <= itemOnObject.item.maxInStack)
-                    itemOnObject.item.quantity = value;
-                else
-                    itemOnObject.item.quantity = 1;
-                item.transform.SetParent(SlotContainer.transform.GetChild(i));
-                item.GetComponent<RectTransform>().localPosition = Vector3.zero;
-//Stratos                item.transform.GetChild(0).GetComponent<Image>().sprite = itemOnObject.item.itemIcon;
-                itemOnObject.item.indexItemInList = ItemsInInventory.Count - 1;
-                //if (inputManagerDatabase == null)
-                //    inputManagerDatabase = (InputManager)Resources.Load("InputManager");
-                return item;
-            }
-        }
-
-        stackableSettings();
-        updateItemList();
+        foreach (ItemEquip itemEquip in itemsEquipInInv)
+            if (itemEquip.indexItemInList == item.indexItemInList)
+                return itemEquip;
         return null;
-
     }
-
-    public void addItemToInventoryStorage(int itemID, int value)
+    public ItemConsume GetConsumeItem(Item item)
     {
-
-        for (int i = 0; i < SlotContainer.transform.childCount; i++)
-        {
-            if (SlotContainer.transform.GetChild(i).childCount == 0)
-            {
-                GameObject item = (GameObject)Instantiate(prefabItem);
-                ItemOnObject itemOnObject = item.GetComponent<ItemOnObject>();
-                itemOnObject.item = itemDatabase.getItemByID(itemID);
-                if (itemOnObject.item.quantity < itemOnObject.item.maxInStack && value <= itemOnObject.item.maxInStack)
-                    itemOnObject.item.quantity = value;
-                else
-                    itemOnObject.item.quantity = 1;
-                item.transform.SetParent(SlotContainer.transform.GetChild(i));
-                item.GetComponent<RectTransform>().localPosition = Vector3.zero;
-                itemOnObject.item.indexItemInList = 999;
-                //if (inputManagerDatabase == null)
-                //    inputManagerDatabase = (InputManager)Resources.Load("InputManager");
-                updateItemSize();
-                stackableSettings();
-                break;
-            }
-        }
-        stackableSettings();
-        updateItemList();
+        foreach (ItemConsume itemConsume in itemsConsumeInInv)
+            if (itemConsume.indexItemInList == item.indexItemInList)
+                return itemConsume;
+        return null;
     }
-
-    public void stackableSettings(bool stackable, Vector3 posi)
+    public ItemOther GetOtherItem(Item item)
     {
-        for (int i = 0; i < SlotContainer.transform.childCount; i++)
-        {
-            if (SlotContainer.transform.GetChild(i).childCount > 0)
-            {
-                ItemOnObject item = SlotContainer.transform.GetChild(i).GetChild(0).GetComponent<ItemOnObject>();
-                if (item.item.maxInStack > 1)
-                {
-                    RectTransform textRectTransform = SlotContainer.transform.GetChild(i).GetChild(0).GetChild(1).GetComponent<RectTransform>();
-                    Text text = SlotContainer.transform.GetChild(i).GetChild(0).GetChild(1).GetComponent<Text>();
-                    text.text = "" + item.item.quantity;
-                    text.enabled = stackable;
-                    textRectTransform.localPosition = posi;
-                }
-            }
-        }
-    }
-
-
-    public void deleteAllItems()
-    {
-        for (int i = 0; i < SlotContainer.transform.childCount; i++)
-        {
-            if (SlotContainer.transform.GetChild(i).childCount != 0)
-            {
-                Destroy(SlotContainer.transform.GetChild(i).GetChild(0).gameObject);
-            }
-        }
-    }
-
-    public List<Item> getItemList()
-    {
-        List<Item> theList = new List<Item>();
-        for (int i = 0; i < SlotContainer.transform.childCount; i++)
-        {
-            if (SlotContainer.transform.GetChild(i).childCount != 0)
-                theList.Add(SlotContainer.transform.GetChild(i).GetChild(0).GetComponent<ItemOnObject>().item);
-        }
-        return theList;
-    }
-
-    public void stackableSettings()
-    {
-        for (int i = 0; i < SlotContainer.transform.childCount; i++)
-        {
-            if (SlotContainer.transform.GetChild(i).childCount > 0)
-            {
-                ItemOnObject item = SlotContainer.transform.GetChild(i).GetChild(0).GetComponent<ItemOnObject>();
-                if (item.item.maxInStack > 1)
-                {
-                    RectTransform textRectTransform = SlotContainer.transform.GetChild(i).GetChild(0).GetChild(1).GetComponent<RectTransform>();
-                    Text text = SlotContainer.transform.GetChild(i).GetChild(0).GetChild(1).GetComponent<Text>();
-                    text.text = "" + item.item.quantity;
-                    text.enabled = stackable;
-                    textRectTransform.localPosition = new Vector3(positionNumberX, positionNumberY, 0);
-                }
-                else
-                {
-                    Text text = SlotContainer.transform.GetChild(i).GetChild(0).GetChild(1).GetComponent<Text>();
-                    text.enabled = false;
-                }
-            }
-        }
-
-    }
-
-    public GameObject getItemGameObjectByName(Item item)
-    {
-        for (int k = 0; k < SlotContainer.transform.childCount; k++)
-        {
-            if (SlotContainer.transform.GetChild(k).childCount != 0)
-            {
-                GameObject itemGameObject = SlotContainer.transform.GetChild(k).GetChild(0).gameObject;
-                Item itemObject = itemGameObject.GetComponent<ItemOnObject>().item;
-                if (itemObject.name.Equals(item.name))
-                {
-                    return itemGameObject;
-                }
-            }
-        }
+        foreach (ItemOther itemOther in itemsOtherInInv)
+            if (itemOther.indexItemInList == item.indexItemInList)
+                return itemOther;
         return null;
     }
 
-    public GameObject getItemGameObject(Item item)
+    protected void AddItemInSlot(ItemEquip itemEquip, int indexSlot, bool createCopy)
     {
-        for (int k = 0; k < SlotContainer.transform.childCount; k++)
-        {
-            if (SlotContainer.transform.GetChild(k).childCount != 0)
-            {
-                GameObject itemGameObject = SlotContainer.transform.GetChild(k).GetChild(0).gameObject;
-                Item itemObject = itemGameObject.GetComponent<ItemOnObject>().item;
-                if (itemObject.Equals(item))
-                {
-                    return itemGameObject;
-                }
-            }
-        }
-        return null;
+        ItemEquip result;
+        if (createCopy)
+            result = itemEquip.getCopy();
+        else
+            result = itemEquip;
+        result.indexItemInList = indexSlot;
+        itemsEquipInInv.Add(result);
+        AddItemInObj(result, indexSlot);
     }
-
-    public void deleteItem(Item item)
+    protected void AddItemInSlot(ItemConsume itemConsume, int indexSlot, bool createCopy)
     {
-        for (int i = 0; i < ItemsInInventory.Count; i++)
-        {
-            if (item.Equals(ItemsInInventory[i]))
-                ItemsInInventory.RemoveAt(item.indexItemInList);
-        }
+        ItemConsume result;
+        if (createCopy)
+            result = itemConsume.getCopy();
+        else
+            result = itemConsume;
+        result.indexItemInList = indexSlot;
+        itemsConsumeInInv.Add(result);
+        AddItemInObj(result, indexSlot);
     }
-
-    
-
-    public void deleteItemFromInventory(Item item)
+    protected void AddItemInSlot(ItemOther itemOther, int indexSlot, bool createCopy)
     {
-        for (int i = 0; i < ItemsInInventory.Count; i++)
-        {
-            if (item.Equals(ItemsInInventory[i]))
-                ItemsInInventory.RemoveAt(i);
-        }
+        ItemOther result;
+        if (createCopy)
+            result = itemOther.getCopy();
+        else
+            result = itemOther;
+        result.indexItemInList = indexSlot;
+        itemsOtherInInv.Add(result);
+        AddItemInObj(result, indexSlot);
     }
-
-    public void deleteItemFromInventoryWithGameObject(Item item)
+    protected void AddItemInObj(Item tempItem, int indexSlot)
     {
-        for (int i = 0; i < ItemsInInventory.Count; i++)
-        {
-            if (item.Equals(ItemsInInventory[i]))
-            {
-                ItemsInInventory.RemoveAt(i);
-            }
-        }
-
-        for (int k = 0; k < SlotContainer.transform.childCount; k++)
-        {
-            if (SlotContainer.transform.GetChild(k).childCount != 0)
-            {
-                GameObject itemGameObject = SlotContainer.transform.GetChild(k).GetChild(0).gameObject;
-                Item itemObject = itemGameObject.GetComponent<ItemOnObject>().item;
-                if (itemObject.Equals(item))
-                {
-                    Destroy(itemGameObject);
-                    break;
-                }
-            }
-        }
+        if (itemTypesDB != null)
+            itemTypesDB.Add(new ItemTypesData(tempItem.id, tempItem.itemType));
+        tempItem.LoadResources();
+        GameObject itemObj = (GameObject)Instantiate(prefabItem, slotContainer.transform.GetChild(indexSlot), false);
+        ItemOnObject _ItemOnObject = itemObj.GetComponent<ItemOnObject>();
+        _ItemOnObject.Item = tempItem;
+        //itemObj.transform.SetParent(slotContainer.transform.GetChild(i));
+        //itemObj.GetComponent<RectTransform>().localPosition = Vector3.zero;
+        _ItemOnObject.GetTypeParentinventory = typeParentInv;
+        _ItemOnObject.UpdateItem();
     }
-
-    public int getPositionOfItem(Item item)
+    /// <summary>
+    /// Add Equip in inventory extension method
+    /// </summary>
+    protected bool AddEquInInvExtension(int id, int quantity, int enchantLvl)
     {
-        for (int i = 0; i < SlotContainer.transform.childCount; i++)
-        {
-            if (SlotContainer.transform.GetChild(i).childCount != 0)
-            {
-                Item item2 = SlotContainer.transform.GetChild(i).GetChild(0).GetComponent<ItemOnObject>().item;
-                if (item.Equals(item2))
-                    return i;
-            }
-        }
-        return -1;
-    }
+        XmlStorageItem xmlStorage = new XmlStorageItem();
+        List<int> freeSlotsIndex = GetAllFreeIndexInInventory();
+        ItemEquip tempItemEquip = new ItemEquip();
 
-    public void addItemToInventory(int ignoreSlot, int itemID, int itemValue)
-    {
+        if (freeSlotsIndex.Count < quantity)
+            return false;
 
-        for (int i = 0; i < SlotContainer.transform.childCount; i++)
-        {
-            if (SlotContainer.transform.GetChild(i).childCount == 0 && i != ignoreSlot)
+        //if item has already in inventory
+        foreach (ItemEquip itemEquipInInv in itemsEquipInInv)
+            if (itemEquipInInv.id == id)
             {
-                GameObject item = (GameObject)Instantiate(prefabItem);
-                ItemOnObject itemOnObject = item.GetComponent<ItemOnObject>();
-                itemOnObject.item = itemDatabase.getItemByID(itemID);
-                if (itemOnObject.item.quantity < itemOnObject.item.maxInStack && itemValue <= itemOnObject.item.maxInStack)
-                    itemOnObject.item.quantity = itemValue;
-                else
-                    itemOnObject.item.quantity = 1;
-                item.transform.SetParent(SlotContainer.transform.GetChild(i));
-                item.GetComponent<RectTransform>().localPosition = Vector3.zero;
-                itemOnObject.item.indexItemInList = 999;
-                updateItemSize();
-                stackableSettings();
+                tempItemEquip = itemEquipInInv;
                 break;
             }
-        }
-        stackableSettings();
-        updateItemList();
-    }
 
-
-
-
-    public void updateItemIndex()
-    {
-        for (int i = 0; i < ItemsInInventory.Count; i++)
+        //else add from xml storage item
+        if (tempItemEquip.IsEmpty())
         {
-            ItemsInInventory[i].indexItemInList = i;
+            tempItemEquip = xmlStorage.GetItemEquipById(id);
+            if (tempItemEquip == null)
+                return false;
+        }
+        for (int i = 0; i < quantity; i++)
+        {
+            ItemEquip newTempItem = tempItemEquip.getCopy();
+            newTempItem.enchantLevel = enchantLvl;
+            AddItemInSlot(newTempItem, freeSlotsIndex[i], false);
+        }
+
+        return false;
+    }
+    /// <summary>
+    /// Add Consume in inventory extension method
+    /// </summary>
+    protected bool AddConsInInvExtension(int id, int quantity)
+    {
+        XmlStorageItem xmlStorage = new XmlStorageItem();
+        bool createNew = false;
+        List<int> freeSlotsIndex = GetAllFreeIndexInInventory();
+        ItemConsume tempItemConsume = new ItemConsume();
+
+        //if item has already in inventory
+        foreach (ItemConsume itemConsumeInInv in itemsConsumeInInv)
+            if (itemConsumeInInv.id == id)
+            {
+                tempItemConsume = itemConsumeInInv;
+                break;
+            }
+
+        //else add from xml storage item
+        if (tempItemConsume.IsEmpty())
+        {
+            if (freeSlotsIndex.Count == 0)
+                return false;
+            tempItemConsume = xmlStorage.GetItemConsumeById(id);
+            if (tempItemConsume == null)
+                return false;
+            createNew = true;
+        }
+
+        int maxInStack = xmlStorage.GetConsumeMaxInStackById(id);
+        return AddConsInInvExtension(tempItemConsume, quantity, maxInStack, createNew, freeSlotsIndex);
+
+    }
+    /// <summary>
+    /// Add Consume in inventory second extension method
+    /// </summary>
+    protected bool AddConsInInvExtension(ItemConsume itemConsume, int quantity, int maxInStack, bool createNew, List<int> freeSlotsIndex)
+    {
+        int numIteration = 0;
+        if (itemConsume.quantity + quantity <= maxInStack)
+        {
+            itemConsume.quantity += quantity;
+            if (createNew)
+                AddItemInSlot(itemConsume, freeSlotsIndex[0], true);
+            else
+                UpdateItemObj(itemConsume.indexItemInList);
+            return true;
+        }
+
+        //else quantity > maxInStack
+        quantity -= (maxInStack - itemConsume.quantity);
+        while (quantity > maxInStack)
+        {
+            quantity -= maxInStack;
+            numIteration++;
+        }
+
+        if (freeSlotsIndex.Count < numIteration)
+            return false;
+
+        //add residue
+        itemConsume.quantity = quantity;
+        int iter = 0;
+        if (createNew)
+        {
+            AddItemInSlot(itemConsume, freeSlotsIndex[0], true);
+            iter++;
+        }
+        else
+            UpdateItemObj(itemConsume.indexItemInList);
+
+        //add max stacks
+        while (iter < numIteration)
+        {
+            ItemConsume newTempItem = itemConsume.getCopy();
+            newTempItem.quantity = maxInStack;
+            AddItemInSlot(newTempItem, freeSlotsIndex[iter], false);
+            iter++;
+        }
+        return true;
+    }
+    /// <summary>
+    /// Add Other item in inventory extension method
+    /// </summary>
+    protected bool AddOthInInvExtension(int id, int quantity)
+    {
+        XmlStorageItem xmlStorage = new XmlStorageItem();
+        List<int> freeSlotsIndex = GetAllFreeIndexInInventory();
+        ItemOther tempItemOther = new ItemOther();
+
+        //if item has already in inventory
+        foreach (ItemOther itemOtherinInv in itemsOtherInInv)
+            if (itemOtherinInv.id == id)
+            {
+                tempItemOther = itemOtherinInv;
+                break;
+            }
+
+        if (tempItemOther.IsEmpty())
+        {
+            //Add new item from xml storage
+            if (freeSlotsIndex.Count == 0)
+                return false;
+
+            tempItemOther = xmlStorage.GetItemOtherById(id);
+            if (tempItemOther == null)
+                return false;
+
+            tempItemOther.quantity = quantity;
+            AddItemInSlot(tempItemOther, freeSlotsIndex[0], false);
+        }
+        else
+        {
+            //update quntity item ha already
+            tempItemOther.quantity += quantity;
+            UpdateItemObj(tempItemOther.indexItemInList);
+        }
+        return true;
+    }
+
+    protected List<int> GetAllFreeIndexInInventory()
+    {
+        List<int> result = new List<int>();
+        for (int i = 0; i < slotContainer.transform.childCount; i++)
+        {
+            if (slotContainer.transform.GetChild(i).childCount == 0)
+            {
+                result.Add(i);
+            }
+        }
+        return result;
+    }
+    protected bool IsFreeIndexInInventory(int index)
+    {
+        if (slotContainer.transform.GetChild(index).childCount == 0)
+            return true;
+        return false;
+    }
+    protected ItemType GetItemTypeByIdInInv(int id)
+    {
+        XmlStorageItem xmlStorage = new XmlStorageItem();
+        foreach (ItemTypesData tempData in itemTypesDB)
+            if (tempData.id == id)
+                return tempData.itemType;
+        return xmlStorage.GetItemTypeById(id);
+    }
+
+    protected void IncOrDecQuantityItemByIndex(int index, int incOrDec, ItemType itemType)
+    {
+        switch (itemType)
+        {
+            case ItemType.Other:
+                itemsOtherInInv[index].quantity += incOrDec;
+                UpdateItemObj(itemsOtherInInv[index].indexItemInList);
+                break;
+            case ItemType.Consume:
+                itemsConsumeInInv[index].quantity += incOrDec;
+                UpdateItemObj(itemsConsumeInInv[index].indexItemInList);
+                break;
+            case ItemType.Equip:
+                itemsEquipInInv[index].quantity += incOrDec;
+                UpdateItemObj(itemsEquipInInv[index].indexItemInList);
+                break;
         }
     }
+    protected void RemoveItemFromInvByIndex(int index, ItemType itemType)
+    {
+        switch (itemType)
+        {
+            case ItemType.Other:
+                Destroy(slotContainer.transform.GetChild(itemsOtherInInv[index].indexItemInList).GetChild(0).gameObject);
+                itemsOtherInInv.RemoveAt(index);
+                break;
+            case ItemType.Consume:
+                Destroy(slotContainer.transform.GetChild(itemsConsumeInInv[index].indexItemInList).GetChild(0).gameObject);
+                itemsConsumeInInv.RemoveAt(index);
+                break;
+            case ItemType.Equip:
+                Destroy(slotContainer.transform.GetChild(itemsEquipInInv[index].indexItemInList).GetChild(0).gameObject);
+                itemsEquipInInv.RemoveAt(index);
+                break;
+        }
+    }
+    protected void RemoveItemFromTypeData(int id)
+    {
+        for (int i = 0; i < itemTypesDB.Count; i++)
+            if (itemTypesDB[i].id == id)
+            {
+                itemTypesDB.RemoveAt(i);
+                break;
+            }
+    }
+    protected void UpdateItemObj(int indexItemInList)
+    {
+        slotContainer.transform.GetChild(indexItemInList).GetChild(0).GetComponent<ItemOnObject>().UpdateItem();
+    }
+
+    #endregion add/delete items
+
 }

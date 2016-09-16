@@ -1,47 +1,52 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Xml;
+using System.Xml.Serialization;
+using UnityEngine.UI;
 
-[System.Serializable]
+
+
 public class Item
 {
-    public string name;                                    
-    public int id;                                          
+    public string name;
+    public int id;
+    public ItemType itemType;
     public string description;
-    public ItemType itemType;                          
-    //public Sprite itemIcon;                                     
-    //public GameObject itemDropModel; 
-    public float salePrice;
-    public int quantity = 1;           
-    public int maxInStack = 1;
+	public string iconPath;                                     
+    public string dropModelPath; 
+    public int salePrice;
+    public int quantity;
     public int indexItemInList = 999;
 
-    //Equipment
-	public List<ItemAttribute> itemAttributes = new List<ItemAttribute>();
+    [XmlIgnore]
+    public Sprite iconSprite;
+    [XmlIgnore]
+    public GameObject dropModelObj;
 
-    //Consume
-    public int numberTicks;
-    public float delayTick;
+    public Item() { }
 
-    
-//    public Item(){}
-//
-//    public Item(string name, int id, string description, Sprite itemIcon, GameObject itemDropModel, int maxStack)                 //function to create a instance of the Item
-//    {
-//        this.name = name;
-//        this.id = id;
-//        this.description = description;
-//        this.itemIcon = itemIcon;
-//        this.itemDropModel = itemDropModel;
-//        this.maxInStack = maxStack;
-//    }
-//
-    public Item getCopy()
+    public Item(int id, string name)
     {
-        return (Item)this.MemberwiseClone();        
-    }   
-    
-    
+        this.id = id;
+        this.name = name;
+    }
+
+    public bool IsEmpty()
+    {
+        if (name == null)
+            return true;
+        return false;
+    }
+
+    public void LoadResources()
+    {
+        if (iconSprite == null)
+            iconSprite = Resources.Load<Sprite>(iconPath);
+        if (dropModelObj == null)
+            dropModelObj = Resources.Load(dropModelPath) as GameObject;
+    }
+		
 }
 
 

@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 [System.Serializable]
-public class ItemEquip : ItemCustom
+public class ItemEquip : Item
 {
     public ItemEquipType itemEquipType;
     public int requestLevel;
@@ -13,7 +13,7 @@ public class ItemEquip : ItemCustom
     public int requestEnergy;
     public int enchantLevel;
 
-    public List<ItemAttribute> itemAttributes = new List<ItemAttribute>();
+    public List<AttributeItem> itemAttributes = new List<AttributeItem>();
 
     public ItemEquip(){}
 
@@ -21,7 +21,7 @@ public class ItemEquip : ItemCustom
     {
         this.id = id;
         this.name = name;
-        this.itemType = ItemTypeCustom.Equip;
+        this.itemType = ItemType.Equip;
 		this.enchantLevel = 0;
         this.quantity = 1;
     }

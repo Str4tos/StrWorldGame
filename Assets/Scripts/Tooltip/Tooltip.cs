@@ -1,156 +1,162 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 public class Tooltip : MonoBehaviour
 {
-    public Item item;
+	public bool isActive = false;
 
-    //GUI
-    [SerializeField]
-    public Image tooltipBackground;
-    [SerializeField]
-    public Text tooltipNameText;
-    [SerializeField]
-    public Text tooltipDescText;
+	private GameObject prefabText;
 
-    //Tooltip Settings
-    [SerializeField]
-    public bool showTooltip;
-    [SerializeField]
-    private bool tooltipCreated;
-    [SerializeField]
-    private int tooltipWidth;
-    [SerializeField]
-    public int tooltipHeight;
-    [SerializeField]
-    private bool showTooltipIcon;
-    [SerializeField]
-    private int tooltipIconPosX;
-    [SerializeField]
-    private int tooltipIconPosY;
-    [SerializeField]
-    private int tooltipIconSize;
-    [SerializeField]
-    private bool showTooltipName;
-    [SerializeField]
-    private int tooltipNamePosX;
-    [SerializeField]
-    private int tooltipNamePosY;
-    [SerializeField]
-    private bool showTooltipDesc;
-    [SerializeField]
-    private int tooltipDescPosX;
-    [SerializeField]
-    private int tooltipDescPosY;
-    [SerializeField]
-    private int tooltipDescSizeX;
-    [SerializeField]
-    private int tooltipDescSizeY;
+    private RectTransform _RectTransform;
+    private float windowHeigh;
 
-    //Tooltip Objects
-    [SerializeField]
-    private GameObject tooltip;
-    [SerializeField]
-    private RectTransform tooltipRectTransform;
-    [SerializeField]
-    private GameObject tooltipTextName;
-    [SerializeField]
-    private GameObject tooltipTextDesc;
-    [SerializeField]
-    private GameObject tooltipImageIcon;
 
+    // Use this for initialization
     void Start()
     {
-        deactivateTooltip();
+        prefabText = Resources.Load("Prefabs/GUI/ItemText") as GameObject;
+        _RectTransform = GetComponent<RectTransform>();
+        windowHeigh = _RectTransform.sizeDelta.y;
+        gameObject.SetActive(false);
     }
 
 
-    public void setImportantVariables()
+    public void ShowTooltip(ItemEquip itemOnSlot, ItemEquip equipedItem)
     {
-        tooltipRectTransform = this.GetComponent<RectTransform>();
+        ShowTooltip(itemOnSlot);
+        if (!equipedItem.IsEmpty())
+            return;
+        
+        CreateNewText("if you replace this item, the following stat changes will occur:");
+        windowHeigh += 20.0f;
+        
+        foreach (AttributeItem onSlotAttr in itemOnSlot.itemAttributes)
+            foreach (AttributeItem equipedAttr in equipedItem.itemAttributes)
+                if (onSlotAttr.attribute == equipedAttr.attribute)
+                    if (onSlotAttr.value < equipedAttr.value)
+                    {
+                        CreateNewText(" -" + (equipedAttr.value - onSlotAttr.value) + " " + onSlotAttr.attribute.ToString());
+                        break;
+                    }
+                    else if (onSlotAttr.value > equipedAttr.value)
+                    {
+                        CreateNewText(" +" + (onSlotAttr.value - equipedAttr.value) + " " + onSlotAttr.attribute.ToString());
+                        break;
+                    }
+        UpdateHeigh();
 
-        tooltipTextName = this.transform.GetChild(2).gameObject;
-        tooltipTextName.SetActive(false);
-        tooltipImageIcon = this.transform.GetChild(1).gameObject;
-        tooltipImageIcon.SetActive(false);
-        tooltipTextDesc = this.transform.GetChild(3).gameObject;
-        tooltipTextDesc.SetActive(false);
-
-        tooltipIconSize = 50;
-        tooltipWidth = 150;
-        tooltipHeight = 250;
-        tooltipDescSizeX = 100;
-        tooltipDescSizeY = 100;
     }
-
-    public void setVariables()
+    public void ShowTooltip(ItemEquip itemOnSlot)
     {
-        tooltipBackground = transform.GetChild(0).GetComponent<Image>();
-        tooltipNameText = transform.GetChild(2).GetComponent<Text>();
-        tooltipDescText = transform.GetChild(3).GetComponent<Text>();
+		isActive = true;
+        gameObject.SetActive(true);
+        //Name + enchant
+        string tempString = itemOnSlot.name;
+        if (itemOnSlot.enchantLevel > 0)
+            tempString += " +" + itemOnSlot.enchantLevel;
+        CreateNewText(tempString);
+        
+        //Type
+        CreateNewText(itemOnSlot.itemType.ToString() + ": " + itemOnSlot.itemEquipType.ToString());
+
+        //Attributes
+        foreach (AttributeItem attribute in itemOnSlot.itemAttributes)
+            CreateNewText(" +" + attribute.value.ToString("#") + " " + attribute.attribute.ToString());
+
+        //Requires
+        if (itemOnSlot.requestLevel > 1)
+            CreateNewText("Requires Level " + itemOnSlot.requestLevel);
+
+        if (itemOnSlot.requestStrenght > 0)
+            CreateNewText("Requires Strenght " + itemOnSlot.requestStrenght);
+
+        if (itemOnSlot.requestAgility > 0)
+            CreateNewText("Requires Agility " + itemOnSlot.requestAgility);
+
+        if (itemOnSlot.requestVitality > 0)
+            CreateNewText("Requires Vitality " + itemOnSlot.requestVitality);
+
+        if (itemOnSlot.requestEnergy > 0)
+            CreateNewText("Requires Energy " + itemOnSlot.requestEnergy);
+
+        //Description
+        if (itemOnSlot.description != "")
+            CreateNewText(itemOnSlot.description);
+
+        //Sell price
+        if (itemOnSlot.salePrice > 0)
+            CreateNewText("Sell price: " + itemOnSlot.salePrice);
+
+        UpdateHeigh();
     }
-
-    public void activateTooltip()               //if you activate the tooltip through hovering over an item
+    public void ShowTooltip(ItemConsume itemOnSlot)
     {
-        tooltipTextName.SetActive(true);
-        tooltipImageIcon.SetActive(true);
-        tooltipTextDesc.SetActive(true);
-        transform.GetChild(0).gameObject.SetActive(true);          //Tooltip getting activated
-//Stratos        transform.GetChild(1).GetComponent<Image>().sprite = item.itemIcon;         //and the itemIcon...
-        transform.GetChild(2).GetComponent<Text>().text = item.name;            //,itemName...
-        transform.GetChild(3).GetComponent<Text>().text = item.description;            //and itemDesc is getting set        
+		isActive = true;
+        gameObject.SetActive(true);
+        //Name
+        CreateNewText(itemOnSlot.name);
+
+        //Type
+        CreateNewText(itemOnSlot.itemType.ToString());
+
+        //Description
+        if (itemOnSlot.description != "")
+            CreateNewText("Use: " + itemOnSlot.description);
+
+        //Sell price
+        if (itemOnSlot.salePrice > 0)
+            CreateNewText("Sell price: " + (itemOnSlot.salePrice * itemOnSlot.quantity));
+
+        UpdateHeigh();
     }
-
-    public void deactivateTooltip()             //deactivating the tooltip after you went out of a slot
+    public void ShowTooltip(ItemOther itemOnSlot)
     {
-        tooltipTextName.SetActive(false);
-        tooltipImageIcon.SetActive(false);
-        tooltipTextDesc.SetActive(false);
-        transform.GetChild(0).gameObject.SetActive(false);
+		isActive = true;
+        gameObject.SetActive(true);
+        //Name
+        CreateNewText(itemOnSlot.name);
+
+        //Type
+        CreateNewText(itemOnSlot.itemOtherType.ToString());
+
+        //Description
+        if (itemOnSlot.description != "")
+            CreateNewText("Use: " + itemOnSlot.description);
+
+        //Sell price
+        if (itemOnSlot.salePrice > 0)
+            CreateNewText("Sell price: " + (itemOnSlot.salePrice * itemOnSlot.quantity));
+
+        UpdateHeigh();
     }
+    
 
-    public void updateTooltip()
+
+    public void HideToolTip()
     {
-        if (!Application.isPlaying)
+		isActive = false;
+        foreach (Transform child in transform)
         {
-            tooltipRectTransform.sizeDelta = new Vector2(tooltipWidth, tooltipHeight);
-
-            if (showTooltipName)
-            {
-                tooltipTextName.gameObject.SetActive(true);
-                this.transform.GetChild(2).GetComponent<RectTransform>().localPosition = new Vector3(tooltipNamePosX, tooltipNamePosY, 0);
-            }
-            else
-            {
-                this.transform.GetChild(2).gameObject.SetActive(false);
-            }
-
-            if (showTooltipIcon)
-            {
-                this.transform.GetChild(1).gameObject.SetActive(true);
-                this.transform.GetChild(1).GetComponent<RectTransform>().localPosition = new Vector3(tooltipIconPosX, tooltipIconPosY, 0);
-                this.transform.GetChild(1).GetComponent<RectTransform>().sizeDelta = new Vector2(tooltipIconSize, tooltipIconSize);
-            }
-            else
-            {
-                this.transform.GetChild(1).gameObject.SetActive(false);
-            }
-
-            if (showTooltipDesc)
-            {
-                this.transform.GetChild(3).gameObject.SetActive(true);
-                this.transform.GetChild(3).GetComponent<RectTransform>().localPosition = new Vector3(tooltipDescPosX, tooltipDescPosY, 0);
-                this.transform.GetChild(3).GetComponent<RectTransform>().sizeDelta = new Vector2(tooltipDescSizeX, tooltipDescSizeY);
-            }
-            else
-            {
-                this.transform.GetChild(3).gameObject.SetActive(false);
-            }
+            GameObject.Destroy(child.gameObject);
         }
+        windowHeigh = 3.0f;
+        UpdateHeigh();
+        gameObject.SetActive(false);
     }
+
+    public float WindowHeigh { get { return windowHeigh; } }
+
+    private void CreateNewText(string text)
+    {
+        GameObject result = Instantiate(prefabText, transform) as GameObject;
+        Text textResult = result.GetComponent<Text>();
+        textResult.text = text;
+        windowHeigh += 20.0f;
+    }
+    private void UpdateHeigh()
+    {
+        _RectTransform.sizeDelta = new Vector2(_RectTransform.sizeDelta.x, windowHeigh);
+    }
+
 }

@@ -3,23 +3,36 @@ using System.Collections;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-public class ItemOnObject : MonoBehaviour                   //Saves the Item in the slot
+public class ItemOnObject : MonoBehaviour
 {
-    public Item item;                                       //Item 
-    private Text text;                                      //text for the itemValue
-    private Image image;
 
-    void Update()
+    private Item item;
+    private Text quantity;                                      
+    private Image image;
+    private Inventory.TypeParentInv typeParentinventory;
+
+    public Item Item
     {
-        text.text = "" + item.quantity;                     //sets the itemValue         
- //Stratos       image.sprite = item.itemIcon;
-        GetComponent<ConsumeItem>().item = item;
+        get { return item; }
+        set { item = value; }
     }
 
-    void Start()
+    public Inventory.TypeParentInv GetTypeParentinventory
     {
-        image = transform.GetChild(0).GetComponent<Image>();
-//Stratos        transform.GetChild(0).GetComponent<Image>().sprite = item.itemIcon;                 //set the sprite of the Item 
-        text = transform.GetChild(1).GetComponent<Text>();                                  //get the text(itemValue GameObject) of the item
+        get { return typeParentinventory; }
+        set { typeParentinventory = value; }
+    }
+
+    public void UpdateItem()
+    {
+		if(image == null)
+			image = transform.GetChild(0).GetComponent<Image>();
+		if(quantity == null)
+			quantity = transform.GetChild(1).GetComponent<Text>();
+        image.sprite = item.iconSprite;
+        if (item.itemType != ItemType.Equip && item.quantity > 1)
+            quantity.text = "" + item.quantity;
+		else
+			quantity.text = "";
     }
 }

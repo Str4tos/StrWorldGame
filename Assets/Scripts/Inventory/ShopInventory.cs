@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class StorageInventory : Inventory {
+public class ShopInventory : Inventory {
 
 	// Use this for initialization
     protected override void Start()
@@ -10,7 +10,7 @@ public class StorageInventory : Inventory {
         Initiate();
         base.Start();
         
-        typeParentInv = TypeParentInv.storage;
+        typeParentInv = TypeParentInv.shop;
 	}
 	
 	// Update is called once per frame

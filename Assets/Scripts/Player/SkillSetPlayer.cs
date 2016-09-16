@@ -9,8 +9,8 @@ using UnityEngine.EventSystems;
 public class SkillSetPlayer : MonoBehaviour
 {
     //Skill
-    public List<SkillCustom> skills = new List<SkillCustom>();
-    private SkillCustom skillActive = null;
+    public List<Skill> skills = new List<Skill>();
+    private Skill skillActive = null;
 
     //---Caster
     private NavMeshAgent _NavMeshAgent;
@@ -116,12 +116,12 @@ public class SkillSetPlayer : MonoBehaviour
             _Animator.SetBool("BasicAttackBool", false);
             if (skillActive == null)
             {
-                skillActive = (SkillCustom)Instantiate(skills[mainSkillId]);
+                skillActive = (Skill)Instantiate(skills[mainSkillId]);
             }
             else if (skillActive.SkillName != skills[mainSkillId].SkillName)
             {
                 Destroy(skillActive.gameObject);
-                skillActive = (SkillCustom)Instantiate(skills[mainSkillId]);
+                skillActive = (Skill)Instantiate(skills[mainSkillId]);
             }
             skillActive.CallSkill(gameObject, true);
         }

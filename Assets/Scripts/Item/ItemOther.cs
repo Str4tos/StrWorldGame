@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class ItemOther : ItemCustom
+public class ItemOther : Item
 {
     public ItemOtherType itemOtherType;
 
@@ -10,7 +10,7 @@ public class ItemOther : ItemCustom
     {
         this.id = id;
         this.name = name;
-        this.itemType = ItemTypeCustom.Other;
+        this.itemType = ItemType.Other;
         this.quantity = 0;
     }
 
