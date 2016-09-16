@@ -3,6 +3,8 @@
 ### This project will never be posted on the sales site.
 
 # StrWorldGame
-First project in Unity 3d.  Non-commercial use
+First project in Unity 3d.
+
+Genre: Action/RPG/Hack and slash
 
 
