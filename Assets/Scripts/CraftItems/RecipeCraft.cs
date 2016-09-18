@@ -27,13 +27,26 @@ public class RecipeCraft
     public class Ingredient
     {
         public int id;
-        public int number;
+        public int requiredNum;
+        public Item item;
 
         public Ingredient() { }
-        public Ingredient(int id, int number)
+        public Ingredient(int id, int requiredNum)
         {
             this.id = id;
-            this.number = number;
+            this.requiredNum = requiredNum;
+        }
+
+        public bool IsEnough()
+        {
+            if (item.quantity < requiredNum)
+                return false;
+            return true;
+        }
+
+        public string GetQuantityText()
+        {
+            return item.quantity + "/" + requiredNum;
         }
     }
 }

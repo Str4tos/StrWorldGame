@@ -4,6 +4,7 @@ using System.Collections;
 public class ItemOther : Item
 {
     public ItemOtherType itemOtherType;
+    public int RecipeId;
 
     public ItemOther() { }
     public ItemOther(int id, string name)

@@ -14,7 +14,7 @@ public class Inventory : MonoBehaviour
     protected List<ItemOther> itemsOtherInInv;
     protected List<ItemTypesData> itemTypesDB;
 
-    protected GameObject slotContainer;
+    protected Transform slotContainer;
     protected bool isActive;
 
 
@@ -22,7 +22,7 @@ public class Inventory : MonoBehaviour
     public event InventoryEvent InventoryInit;
     public event InventoryEvent InventoryOpen;
 
-    public enum TypeParentInv { bag, equip, hotbar, storage, shop };
+    public enum TypeParentInv { bag, equip, hotbar, storage, shop, craft };
     [HideInInspector]
     public TypeParentInv typeParentInv;
 
@@ -33,7 +33,7 @@ public class Inventory : MonoBehaviour
 
     protected virtual void Start()
     {
-        slotContainer = transform.Find("Slots").gameObject;
+        slotContainer = transform.FindChild("Slots");
         prefabItem = Resources.Load("Prefabs/Inventory/Item") as GameObject;
         isActive = false;
         gameObject.SetActive(false);
@@ -69,7 +69,6 @@ public class Inventory : MonoBehaviour
     {
         gameObject.SetActive(false);
         isActive = false;
-        //checkIfAllInventoryClosed();
     }
 
     public void LoadSerialization(InventoryData loadedInventory)
@@ -339,6 +338,7 @@ public class Inventory : MonoBehaviour
             else
             {
                 quantity -= (int)item.Value;
+                IncOrDecQuantityItemByIndex((int)item.Key, -(int)item.Value, tempTypeItem);
                 RemoveItemFromInvByIndex((int)item.Key, tempTypeItem);
             }
             if (quantity == 0)
@@ -369,6 +369,85 @@ public class Inventory : MonoBehaviour
             if (itemOther.indexItemInList == item.indexItemInList)
                 return itemOther;
         return null;
+    }
+    public ItemEquip GetItemEquipById(int id, bool elseLoadFromXml)
+    {
+        //if item has already in inventory
+        foreach (ItemEquip itemEquipInInv in itemsEquipInInv)
+            if (itemEquipInInv.id == id)
+                return itemEquipInInv;
+
+        //else add from xml storage item
+        if (elseLoadFromXml)
+        {
+            XmlStorageItem xmlStorage = new XmlStorageItem();
+            return xmlStorage.GetItemEquipById(id);
+        }
+        return null;
+    }
+    public ItemConsume GetItemConsumeById(int id, bool elseLoadFromXml)
+    {
+        //if item has already in inventory
+        foreach (ItemConsume itemConsumeInInv in itemsConsumeInInv)
+            if (itemConsumeInInv.id == id)
+                return itemConsumeInInv;
+
+        //else add from xml storage item
+        if (elseLoadFromXml)
+        {
+            XmlStorageItem xmlStorage = new XmlStorageItem();
+            return xmlStorage.GetItemConsumeById(id);
+        }
+
+        return null;
+    }
+    public ItemOther GetItemOtherById(int id, bool elseLoadFromXml)
+    {
+        //if item has already in inventory
+        foreach (ItemOther itemOtherinInv in itemsOtherInInv)
+            if (itemOtherinInv.id == id)
+                return itemOtherinInv;
+
+        //Add new item from xml storage
+        if (elseLoadFromXml)
+        {
+            XmlStorageItem xmlStorage = new XmlStorageItem();
+            return xmlStorage.GetItemOtherById(id);
+        }
+
+        return null;
+    }
+    public Item GetItemById(int id, bool elseLoadFromXml)
+    {
+        foreach (ItemOther itemOtherinInv in itemsOtherInInv)
+            if (itemOtherinInv.id == id)
+                return itemOtherinInv;
+        foreach (ItemConsume itemConsumeInInv in itemsConsumeInInv)
+            if (itemConsumeInInv.id == id)
+                return itemConsumeInInv;
+        foreach (ItemEquip itemEquipInInv in itemsEquipInInv)
+            if (itemEquipInInv.id == id)
+                return itemEquipInInv;
+        if (elseLoadFromXml)
+        {
+            XmlStorageItem storageItem = new XmlStorageItem();
+            return storageItem.GetResultItemById(id);
+        }
+        return null;
+    }
+
+
+    public bool CheckFreeSlot(int number)
+    {
+        int freeSlotsNumber = 0;
+        for (int i = 0; i < slotContainer.childCount; i++)
+        {
+            if (slotContainer.GetChild(i).childCount == 0)
+                freeSlotsNumber++;
+            if (freeSlotsNumber == number)
+                return true;
+        }
+        return false;
     }
 
     protected void AddItemInSlot(ItemEquip itemEquip, int indexSlot, bool createCopy)
@@ -409,7 +488,7 @@ public class Inventory : MonoBehaviour
         if (itemTypesDB != null)
             itemTypesDB.Add(new ItemTypesData(tempItem.id, tempItem.itemType));
         tempItem.LoadResources();
-        GameObject itemObj = (GameObject)Instantiate(prefabItem, slotContainer.transform.GetChild(indexSlot), false);
+        GameObject itemObj = (GameObject)Instantiate(prefabItem, slotContainer.GetChild(indexSlot), false);
         ItemOnObject _ItemOnObject = itemObj.GetComponent<ItemOnObject>();
         _ItemOnObject.Item = tempItem;
         //itemObj.transform.SetParent(slotContainer.transform.GetChild(i));
@@ -422,28 +501,13 @@ public class Inventory : MonoBehaviour
     /// </summary>
     protected bool AddEquInInvExtension(int id, int quantity, int enchantLvl)
     {
-        XmlStorageItem xmlStorage = new XmlStorageItem();
         List<int> freeSlotsIndex = GetAllFreeIndexInInventory();
-        ItemEquip tempItemEquip = new ItemEquip();
-
         if (freeSlotsIndex.Count < quantity)
             return false;
 
-        //if item has already in inventory
-        foreach (ItemEquip itemEquipInInv in itemsEquipInInv)
-            if (itemEquipInInv.id == id)
-            {
-                tempItemEquip = itemEquipInInv;
-                break;
-            }
+        XmlStorageItem xmlStorage = new XmlStorageItem();
+        ItemEquip tempItemEquip = GetItemEquipById(id, true);
 
-        //else add from xml storage item
-        if (tempItemEquip.IsEmpty())
-        {
-            tempItemEquip = xmlStorage.GetItemEquipById(id);
-            if (tempItemEquip == null)
-                return false;
-        }
         for (int i = 0; i < quantity; i++)
         {
             ItemEquip newTempItem = tempItemEquip.getCopy();
@@ -458,24 +522,17 @@ public class Inventory : MonoBehaviour
     /// </summary>
     protected bool AddConsInInvExtension(int id, int quantity)
     {
-        XmlStorageItem xmlStorage = new XmlStorageItem();
         bool createNew = false;
+        XmlStorageItem xmlStorage = new XmlStorageItem();
         List<int> freeSlotsIndex = GetAllFreeIndexInInventory();
-        ItemConsume tempItemConsume = new ItemConsume();
-
-        //if item has already in inventory
-        foreach (ItemConsume itemConsumeInInv in itemsConsumeInInv)
-            if (itemConsumeInInv.id == id)
-            {
-                tempItemConsume = itemConsumeInInv;
-                break;
-            }
+        ItemConsume tempItemConsume = GetItemConsumeById(id, false);
 
         //else add from xml storage item
-        if (tempItemConsume.IsEmpty())
+        if (tempItemConsume == null)
         {
             if (freeSlotsIndex.Count == 0)
                 return false;
+
             tempItemConsume = xmlStorage.GetItemConsumeById(id);
             if (tempItemConsume == null)
                 return false;
@@ -539,20 +596,12 @@ public class Inventory : MonoBehaviour
     /// </summary>
     protected bool AddOthInInvExtension(int id, int quantity)
     {
-        XmlStorageItem xmlStorage = new XmlStorageItem();
-        List<int> freeSlotsIndex = GetAllFreeIndexInInventory();
-        ItemOther tempItemOther = new ItemOther();
+        ItemOther tempItemOther = GetItemOtherById(id, false);
 
-        //if item has already in inventory
-        foreach (ItemOther itemOtherinInv in itemsOtherInInv)
-            if (itemOtherinInv.id == id)
-            {
-                tempItemOther = itemOtherinInv;
-                break;
-            }
-
-        if (tempItemOther.IsEmpty())
+        if (tempItemOther == null)
         {
+            XmlStorageItem xmlStorage = new XmlStorageItem();
+            List<int> freeSlotsIndex = GetAllFreeIndexInInventory();
             //Add new item from xml storage
             if (freeSlotsIndex.Count == 0)
                 return false;
@@ -573,12 +622,15 @@ public class Inventory : MonoBehaviour
         return true;
     }
 
+
+
+
     protected List<int> GetAllFreeIndexInInventory()
     {
         List<int> result = new List<int>();
-        for (int i = 0; i < slotContainer.transform.childCount; i++)
+        for (int i = 0; i < slotContainer.childCount; i++)
         {
-            if (slotContainer.transform.GetChild(i).childCount == 0)
+            if (slotContainer.GetChild(i).childCount == 0)
             {
                 result.Add(i);
             }
@@ -587,7 +639,7 @@ public class Inventory : MonoBehaviour
     }
     protected bool IsFreeIndexInInventory(int index)
     {
-        if (slotContainer.transform.GetChild(index).childCount == 0)
+        if (slotContainer.GetChild(index).childCount == 0)
             return true;
         return false;
     }
@@ -623,15 +675,15 @@ public class Inventory : MonoBehaviour
         switch (itemType)
         {
             case ItemType.Other:
-                Destroy(slotContainer.transform.GetChild(itemsOtherInInv[index].indexItemInList).GetChild(0).gameObject);
+                Destroy(slotContainer.GetChild(itemsOtherInInv[index].indexItemInList).GetChild(0).gameObject);
                 itemsOtherInInv.RemoveAt(index);
                 break;
             case ItemType.Consume:
-                Destroy(slotContainer.transform.GetChild(itemsConsumeInInv[index].indexItemInList).GetChild(0).gameObject);
+                Destroy(slotContainer.GetChild(itemsConsumeInInv[index].indexItemInList).GetChild(0).gameObject);
                 itemsConsumeInInv.RemoveAt(index);
                 break;
             case ItemType.Equip:
-                Destroy(slotContainer.transform.GetChild(itemsEquipInInv[index].indexItemInList).GetChild(0).gameObject);
+                Destroy(slotContainer.GetChild(itemsEquipInInv[index].indexItemInList).GetChild(0).gameObject);
                 itemsEquipInInv.RemoveAt(index);
                 break;
         }
@@ -647,7 +699,7 @@ public class Inventory : MonoBehaviour
     }
     protected void UpdateItemObj(int indexItemInList)
     {
-        slotContainer.transform.GetChild(indexItemInList).GetChild(0).GetComponent<ItemOnObject>().UpdateItem();
+        slotContainer.GetChild(indexItemInList).GetChild(0).GetComponent<ItemOnObject>().UpdateItem();
     }
 
     #endregion add/delete items

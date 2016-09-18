@@ -9,11 +9,14 @@ using System.Xml.Serialization;
 public class XmlStorageItem : MonoBehaviour
 {
 
-    private const int quantityIdInFile = 50;
-    //private readonly string[] arrayFiles = new string[] { "Items_0-49.xml", "Items_50-99.xml", "Items_100-149.xml" };
+    private const int numberIdInFile = 50; //The number of items in a single file
     private const string defaultSpritePath = "Textures/Icons/Item/I_Map";
     private const string defaultDropModelPath = "Prefabs/Inventory/DraggingItem";
-    
+
+    private ItemEquip resultEquip;
+    private ItemConsume resultConsume;
+    private ItemOther resultOther;
+
     //public void SaveItems()
     //{
     //    XmlSerializer xmlSerializer = new XmlSerializer(typeof(ItemDatabaseCustom));
@@ -104,6 +107,49 @@ public class XmlStorageItem : MonoBehaviour
                 xmlReader.Skip();
         }
         return ItemType.Other;
+    }
+
+    /// <summary>
+    /// Load item by id to result variables
+    /// </summary>
+    /// <param name="id">id item</param>
+    /// <returns>False - no item in xml storage</returns>
+    public Item GetResultItemById(int id)
+    {
+        XmlReader xmlReader = GetXmlReader(id);
+        while (xmlReader.Read())
+        {
+            switch (xmlReader.Name)
+            {
+                case "item":
+                    if (xmlReader.GetAttribute("id") == id.ToString())
+                    {
+                        return LoadOtherItem(xmlReader, id);
+                    }
+                    else
+                        xmlReader.Skip();
+                    break;
+                case "equip":
+                    if (xmlReader.GetAttribute("id") == id.ToString())
+                    {
+                        return LoadEquipItem(xmlReader, id);
+                    }
+                    else
+                        xmlReader.Skip();
+                    break;
+                case "consume":
+                    if (xmlReader.GetAttribute("id") == id.ToString())
+                    {
+                        return LoadConsumeItem(xmlReader, id);
+                    }
+                    else
+                        xmlReader.Skip();
+                    break;
+                default: continue;
+            }
+
+        }
+        return null;
     }
 
     /// <summary>
@@ -202,8 +248,8 @@ public class XmlStorageItem : MonoBehaviour
     }
     private XmlReader GetXmlReader(int id)
     {
-        int minIdInFile = (id / quantityIdInFile) * quantityIdInFile;
-        string nameFile = minIdInFile + "-" + (minIdInFile + quantityIdInFile - 1);
+        int minIdInFile = (id / numberIdInFile) * numberIdInFile;
+        string nameFile = minIdInFile + "-" + (minIdInFile + numberIdInFile - 1);
         TextAsset _TextAsset = Resources.Load("XML/Items/" + nameFile) as TextAsset;
         //XmlReader xmlReader = XmlReader.Create(Application.dataPath + "/Resources/XML/" + arrayFiles[numFile]);  
         TextReader _TextReader = new StringReader(_TextAsset.text);
@@ -295,6 +341,10 @@ public class XmlStorageItem : MonoBehaviour
             itemOther.salePrice = xmlReader.ReadElementContentAsInt();
         else
             itemOther.salePrice = 0;
+
+        //<recipe id=""/>
+        if (itemOther.itemOtherType == ItemOtherType.Recipe && xmlReader.ReadToNextSibling("recipe"))
+            itemOther.RecipeId = int.Parse(xmlReader.GetAttribute("id"));
 
         xmlReader.Close();
         return itemOther;

@@ -10,6 +10,7 @@ public class ItemOnObject : MonoBehaviour
     private Text quantity;                                      
     private Image image;
     private Inventory.TypeParentInv typeParentinventory;
+    private Transform currTransform;
 
     public Item Item
     {
@@ -25,14 +26,20 @@ public class ItemOnObject : MonoBehaviour
 
     public void UpdateItem()
     {
+        if (currTransform == null)
+            currTransform = transform;
 		if(image == null)
-			image = transform.GetChild(0).GetComponent<Image>();
+            image = currTransform.GetChild(0).GetComponent<Image>();
 		if(quantity == null)
-			quantity = transform.GetChild(1).GetComponent<Text>();
+            quantity = currTransform.FindChild("Text").GetComponent<Text>();
         image.sprite = item.iconSprite;
         if (item.itemType != ItemType.Equip && item.quantity > 1)
             quantity.text = "" + item.quantity;
-		else
-			quantity.text = "";
+		
+    }
+
+    public void SetText(string text)
+    {
+        quantity.text = text;
     }
 }

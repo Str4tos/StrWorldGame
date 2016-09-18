@@ -3,17 +3,17 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections;
 
-public class CloseInventory : MonoBehaviour, IPointerClickHandler
+public class CloseCraftInvintory : MonoBehaviour, IPointerClickHandler
 {
 
-    Inventory inv;
+    CraftingInventory inv;
     void Start()
     {
-        inv = transform.parent.GetComponent<Inventory>();
+        inv = transform.parent.parent.GetComponent<CraftingInventory>();
 
     }
-		
-	public void OnPointerClick(PointerEventData eventData)
+
+    public void OnPointerClick(PointerEventData eventData)
     {
         if (eventData.button == PointerEventData.InputButton.Left)
         {

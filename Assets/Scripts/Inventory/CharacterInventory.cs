@@ -49,7 +49,7 @@ public class CharacterInventory : Inventory
         ItemEquipedData _ItemEquipedData = GetItemEquipData(tempType);
         if (_ItemEquipedData.IsEquiped)
         {
-            Destroy(slotContainer.transform.GetChild(_ItemEquipedData.Item.indexItemInList).GetChild(0).gameObject);
+            Destroy(slotContainer.GetChild(_ItemEquipedData.Item.indexItemInList).GetChild(0).gameObject);
             itemForReturn = _ItemEquipedData.Item;
             itemForReturn.indexItemInList = equipItem.indexItemInList;
         }
@@ -65,7 +65,7 @@ public class CharacterInventory : Inventory
     public void UnEquip(Item item)
     {
         ItemEquipedData _ItemEquipedData = itemsEquipedData[item.indexItemInList];
-        Destroy(slotContainer.transform.GetChild(item.indexItemInList).GetChild(0).gameObject);
+        Destroy(slotContainer.GetChild(item.indexItemInList).GetChild(0).gameObject);
         _ItemEquipedData.UnEquiped();
     }
 

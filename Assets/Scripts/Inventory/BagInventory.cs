@@ -58,6 +58,7 @@ public class BagInventory : Inventory
 
     public void AddTestItem(int id)
     {
-        AddItemToInventory(id, 3);
+        AddItemToInventory(1, 5);
+        AddItemToInventory(4, 1);
     }
 }

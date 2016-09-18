@@ -4,7 +4,6 @@
     <ingridien id="4" number="2"/>
   </recipe>
   <recipe recipe_id="1" result_id="3" chance="80">
-    <ingridien id="4" number="1"/>
-    <ingridien id="3" number="2"/>
+    <ingridien id="1" number="10"/>
   </recipe>
 </list>

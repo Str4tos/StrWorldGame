@@ -6,12 +6,12 @@ using System.IO;
 
 public class XMLStorageRecipes {
 
-    private const int quantityIdInFile = 50;
+    private const int numberIdInFile = 50; //The number of items in a single file
 
     private XmlReader GetXmlReader(int id)
     {
-        int minIdInFile = (id / quantityIdInFile) * quantityIdInFile;
-        string nameFile = minIdInFile + "-" + (minIdInFile + quantityIdInFile - 1);
+        int minIdInFile = (id / numberIdInFile) * numberIdInFile;
+        string nameFile = minIdInFile + "-" + (minIdInFile + numberIdInFile - 1);
         TextAsset _TextAsset = Resources.Load("XML/Craft/" + nameFile) as TextAsset;
         TextReader _TextReader = new StringReader(_TextAsset.text);
         XmlReader xmlReader = XmlReader.Create(_TextReader);
@@ -50,7 +50,6 @@ public class XMLStorageRecipes {
         }
         return null;
     }
-
 
     private RecipeCraft LoadRecipeCraft(XmlReader xmlReader)
     {

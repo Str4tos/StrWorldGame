@@ -33,10 +33,17 @@
     <icon path="Textures/Icons/Equipment/C_Hat01"/>
     <model path=""/>
     <salePrice>100</salePrice>
-    <requests lvl="1" str="0" agi="0" vit="0" ene="0"/>
+    <requests lvl="5" str="5" agi="10" vit="10" ene="10"/>
     <atributes>
       <add attribute="Defense">5</add>
       <add attribute="Health">4</add>
     </atributes>
   </equip>
+  <item id="4" type="Recipe" name="Recipe: Head Test">
+    <description></description>
+    <icon path="Textures/Icons/Item/I_Amethist"/>
+    <model path=""/>
+    <salePrice>80</salePrice>
+    <recipe id="1"/>
+  </item>
 </list>

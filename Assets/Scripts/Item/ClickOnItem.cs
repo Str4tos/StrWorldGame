@@ -138,6 +138,10 @@ public class ClickOnItem : MonoBehaviour, IPointerDownHandler
         {
             // Add methods for usage consume items
         }
+        if (item.itemType == ItemType.Other)
+        {
+            _PlayerGui.InvCrafting.OpenInventory(item as ItemOther);
+        }
     }
     private void StorageUsage()
     {
