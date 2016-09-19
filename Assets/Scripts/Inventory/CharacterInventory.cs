@@ -69,7 +69,7 @@ public class CharacterInventory : Inventory
         _ItemEquipedData.UnEquiped();
     }
 
-    public override ItemEquip GetEquipItem(Item item)
+    public ItemEquip GetEquipItem(Item item)
     {
         return itemsEquipedData[item.indexItemInList].Item;
     }

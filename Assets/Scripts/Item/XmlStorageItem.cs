@@ -13,10 +13,6 @@ public class XmlStorageItem : MonoBehaviour
     private const string defaultSpritePath = "Textures/Icons/Item/I_Map";
     private const string defaultDropModelPath = "Prefabs/Inventory/DraggingItem";
 
-    private ItemEquip resultEquip;
-    private ItemConsume resultConsume;
-    private ItemOther resultOther;
-
     //public void SaveItems()
     //{
     //    XmlSerializer xmlSerializer = new XmlSerializer(typeof(ItemDatabaseCustom));
@@ -25,96 +21,12 @@ public class XmlStorageItem : MonoBehaviour
     //    fileStram.Close();
     //}
 
-    public Item GetItemById(int id)
-    {
-        XmlReader xmlReader = GetXmlReader(id);
-        ItemType tempItemType;
-        while (xmlReader.Read())
-        {
-            switch (xmlReader.Name)
-            {
-                case "item":
-                    tempItemType = ItemType.Other;
-                    break;
-                case "equip":
-                    tempItemType = ItemType.Equip;
-                    break;
-                case "consume":
-                    tempItemType = ItemType.Consume;
-                    break;
-                default: continue;
-            }
-
-            if (xmlReader.GetAttribute("id") == id.ToString())
-            {
-                Item tempItem = new Item(id, xmlReader.GetAttribute("name"));
-                tempItem.itemType = tempItemType;
-
-                xmlReader.ReadToDescendant("description"); //<description>       
-                tempItem.description = xmlReader.ReadElementContentAsString();
-
-                //<icon path=.../>                                          
-                if (xmlReader.ReadToNextSibling("icon") && xmlReader.GetAttribute(0) != "")
-                    tempItem.iconPath = xmlReader.GetAttribute(0);
-                else
-                    tempItem.iconPath = defaultSpritePath;
-
-                //<model path=.../>                                        
-                if (xmlReader.ReadToNextSibling("model") && xmlReader.GetAttribute(0) != "")
-                    tempItem.dropModelPath = xmlReader.GetAttribute(0);
-                else
-                    tempItem.dropModelPath = defaultDropModelPath;
-
-                if (xmlReader.ReadToNextSibling("salePrice")) //<salePrice>..</salePrice> 
-                    tempItem.salePrice = xmlReader.ReadElementContentAsInt();
-                else
-                    tempItem.salePrice = 0;
-
-                return tempItem;
-            }
-            else
-            {
-                xmlReader.Skip();
-            }
-
-        }
-        return null;
-    }
-
-    public ItemType GetItemTypeById(int id)
-    {
-        XmlReader xmlReader = GetXmlReader(id);
-        ItemType tempItemType;
-        while (xmlReader.Read())
-        {
-            switch (xmlReader.Name)
-            {
-                case "item":
-                    tempItemType = ItemType.Other;
-                    break;
-                case "equip":
-                    tempItemType = ItemType.Equip;
-                    break;
-                case "consume":
-                    tempItemType = ItemType.Consume;
-                    break;
-                default: continue;
-            }
-
-            if (xmlReader.GetAttribute("id") == id.ToString())
-                return tempItemType;
-            else
-                xmlReader.Skip();
-        }
-        return ItemType.Other;
-    }
-
     /// <summary>
     /// Load item by id to result variables
     /// </summary>
     /// <param name="id">id item</param>
     /// <returns>False - no item in xml storage</returns>
-    public Item GetResultItemById(int id)
+    public Item GetItemById(int id)
     {
         XmlReader xmlReader = GetXmlReader(id);
         while (xmlReader.Read())
@@ -152,100 +64,6 @@ public class XmlStorageItem : MonoBehaviour
         return null;
     }
 
-    /// <summary>
-    /// Return Item Equip clear from xml storage
-    /// </summary>
-    /// <param name="id">Id item</param>
-    public ItemEquip GetItemEquipById(int id)
-    {
-        XmlReader xmlReader = GetXmlReader(id);
-        while (xmlReader.Read())
-        {
-            if (xmlReader.Name == "equip")
-                if (xmlReader.GetAttribute("id") == id.ToString())
-                {
-                    //<equip ...>
-                    return LoadEquipItem(xmlReader, id);
-                }
-                else
-                    xmlReader.Skip();
-
-            if (xmlReader.Name == "consume" || xmlReader.Name == "item")
-                xmlReader.Skip();
-        }
-        return null;
-    }
-    /// <summary>
-    /// Return Item Consume clear from xml storage
-    /// </summary>
-    /// <param name="id">Id item</param>
-    public ItemConsume GetItemConsumeById(int id)
-    {
-        XmlReader xmlReader = GetXmlReader(id);
-        while (xmlReader.Read())
-        {
-            if (xmlReader.Name == "consume")
-                if (xmlReader.GetAttribute("id") == id.ToString())
-                {
-                    //<consume ...>
-                    return LoadConsumeItem(xmlReader, id);
-                }
-                else
-                    xmlReader.Skip();
-
-            if (xmlReader.Name == "equip" || xmlReader.Name == "item")
-                xmlReader.Skip();
-        }
-        return null;
-    }
-    /// <summary>
-    /// Return Item Other clear from xml storage
-    /// </summary>
-    /// <param name="id">Id item</param>
-    public ItemOther GetItemOtherById(int id)
-    {
-        XmlReader xmlReader = GetXmlReader(id);
-        while (xmlReader.Read())
-        {
-            if (xmlReader.Name == "item")
-                if (xmlReader.GetAttribute("id") == id.ToString())
-                {
-                    //<item ...>
-                    return LoadOtherItem(xmlReader, id);
-                }
-                else
-                    xmlReader.Skip();
-
-            if (xmlReader.Name == "equip" || xmlReader.Name == "consume")
-                xmlReader.Skip();
-        }
-        return null;
-    }
-
-    public int GetConsumeMaxInStackById(int id)
-    {
-        XmlReader xmlReader = GetXmlReader(id);
-        while (xmlReader.Read())
-        {
-            if (xmlReader.Name == "item" || xmlReader.Name == "equip")
-            {
-                xmlReader.Skip();
-                continue;
-            }
-            if (xmlReader.Name == "consume")
-            {
-                if (xmlReader.GetAttribute("id") == id.ToString())
-                {
-                    if (xmlReader.ReadToFollowing("maxInStack")) //<maxInStack>
-                        return xmlReader.ReadElementContentAsInt();
-                    else
-                        return 99;
-                }
-                xmlReader.Skip();
-            }
-        }
-        return 1;
-    }
     private XmlReader GetXmlReader(int id)
     {
         int minIdInFile = (id / numberIdInFile) * numberIdInFile;

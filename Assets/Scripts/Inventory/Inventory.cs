@@ -9,14 +9,10 @@ public class Inventory : MonoBehaviour
     protected GameObject prefabItem;
 
     //Items
-    protected List<ItemEquip> itemsEquipInInv;
-    protected List<ItemConsume> itemsConsumeInInv;
-    protected List<ItemOther> itemsOtherInInv;
-    protected List<ItemTypesData> itemTypesDB;
+    protected List<Item> itemsInInv;
 
     protected Transform slotContainer;
     protected bool isActive;
-
 
     public delegate void InventoryEvent();
     public event InventoryEvent InventoryInit;
@@ -43,10 +39,7 @@ public class Inventory : MonoBehaviour
     }
     protected void Initiate()
     {
-        itemsEquipInInv = new List<ItemEquip>();
-        itemsConsumeInInv = new List<ItemConsume>();
-        itemsOtherInInv = new List<ItemOther>();
-        itemTypesDB = new List<ItemTypesData>();
+        itemsInInv = new List<Item>();
     }
 
     public virtual void OpenInventory()
@@ -73,218 +66,129 @@ public class Inventory : MonoBehaviour
 
     public void LoadSerialization(InventoryData loadedInventory)
     {
-        itemsEquipInInv = loadedInventory.itemsEquipInInv;
-        itemsConsumeInInv = loadedInventory.itemsConsumeInInv;
-        itemsOtherInInv = loadedInventory.itemsOtherInInv;
-        SyncItemsInInventory();
+        foreach (ItemEquip itemEquip in loadedInventory.itemsEquipInInv)
+        {
+            itemsInInv.Add(itemEquip);
+            AddItemInObj(itemEquip, itemEquip.indexItemInList);
+        }
+        foreach (ItemConsume itemConsume in loadedInventory.itemsConsumeInInv)
+        {
+            itemsInInv.Add(itemConsume);
+            AddItemInObj(itemConsume, itemConsume.indexItemInList);
+        }
+        foreach (ItemOther itemOther in loadedInventory.itemsOtherInInv)
+        {
+            itemsInInv.Add(itemOther);
+            AddItemInObj(itemOther, itemOther.indexItemInList);
+        }
     }
 
     #region add/delete items
 
-    protected bool SyncItemsInInventory()
-    {
-        foreach (ItemEquip ItemEquip in itemsEquipInInv)
-            AddItemInObj(ItemEquip, ItemEquip.indexItemInList);
-        foreach (ItemConsume itemConsume in itemsConsumeInInv)
-            AddItemInObj(itemConsume, itemConsume.indexItemInList);
-        foreach (ItemOther itemOther in itemsOtherInInv)
-            AddItemInObj(itemOther, itemOther.indexItemInList);
-        return true;
-    }
-
     /// <summary>
-    /// Add item to inventory search by id in free slot./
+    /// Add item in inventory by id. Recomendet method AddItemToInventory(Item item)<br/>
     /// Returns: True - successfully | False - fail
     /// </summary>
-    /// <param name="id">Id item</param>
+    /// <param name="id">Item id</param>
     /// <param name="quantity">Quantity items</param>
-    /// <returns>True - successfully | False - fail</returns>
+    /// <returns></returns>
     public bool AddItemToInventory(int id, int quantity)
     {
-        ItemType tempItemType = GetItemTypeByIdInInv(id);
-        switch (tempItemType)
+        Item currItem = null;
+        //Get copy from inventory
+        foreach (Item itemInInv in itemsInInv)
+            if (itemInInv.id == id)
+            {
+                currItem = itemInInv.GetCopy();
+                break;
+            }
+
+        //else get item from xml storage
+        if (currItem == null)
         {
-            case ItemType.Other:
-                return AddOthInInvExtension(id, quantity);
-            case ItemType.Consume:
-                return AddConsInInvExtension(id, quantity);
+            XmlStorageItem storageItem = new XmlStorageItem();
+            currItem = storageItem.GetItemById(id);
+        }
+        currItem.quantity = quantity;
+        return AddItemToInventory(currItem);
+    }
+    /// <summary>
+    /// Add item to inventory. This recomendet method.<br/>
+    /// Returns: True - successfully | False - fail
+    /// </summary>
+    /// <param name="item">ItemEquip/ItemConsume/ItemOther</param>
+    /// <returns>True - successfully | False - fail</returns>
+    public bool AddItemToInventory(Item item)
+    {
+        List<int> freeSlots;
+        switch (item.itemType)
+        {
             case ItemType.Equip:
-                return AddEquInInvExtension(id, quantity, 0);
+                return AddEquipInInvExtension(item);
+
+            case ItemType.Consume:
+                return AddConsumInInvExtension(item);
+
+            case ItemType.Other:
+                return AddOtherInInvExtension(item);
         }
         return false;
     }
     /// <summary>
-    /// Add equip item to inventory in free slot./
-    /// Returns: True - successfully | False - fail
+    /// Add equip item to inventory in indexSlot.<br/>
+    /// Returns: True - successfully | False - slot not free
     /// </summary>
-    /// <param name="itemEquip">Equip item</param>
-    /// <returns>True - successfully | False - fail</returns>
-    public bool AddItemToInventory(ItemEquip itemEquip)
+    /// <param name="item">ItemEquip/ItemConsume/ItemOther</param>
+    /// <param name="indexSlot">Index slot in inventory</param>
+    /// <returns></returns>
+    public bool AddItemToInventory(Item item, int indexSlot)
     {
-        List<int> freeSlotsIndex = GetAllFreeIndexInInventory();
-        if (freeSlotsIndex.Count == 0)
-            return false;
-        AddItemInSlot(itemEquip, freeSlotsIndex[0], true);
-        return true;
-    }
-    /// <summary>
-    /// Add consume item to inventory in free slot./
-    /// Returns: True - successfully | False - fail
-    /// </summary>
-    /// <param name="itemConsume">Consume item</param>
-    /// <returns>True - successfully | False - fail</returns>
-    public bool AddItemToInventory(ItemConsume itemConsume)
-    {
-        ItemConsume tempItemConsume = new ItemConsume();
-        List<int> freeSlotsIndex = GetAllFreeIndexInInventory();
-        XmlStorageItem xmlStorage = new XmlStorageItem();
-        int maxInStack = xmlStorage.GetConsumeMaxInStackById(itemConsume.id);
-
-        foreach (ItemConsume itemConsumeInInv in itemsConsumeInInv)
-            if (itemConsumeInInv.id == itemConsume.id)
-            {
-                tempItemConsume = itemConsumeInInv;
-                break;
-            }
-
-        if (tempItemConsume.IsEmpty())
-        {
-            if (freeSlotsIndex.Count == 0)
-                return false;
-            return AddConsInInvExtension(itemConsume, 0, maxInStack, true, freeSlotsIndex);
-        }
-        else
-        {
-            return AddConsInInvExtension(tempItemConsume, itemConsume.quantity, maxInStack, false, freeSlotsIndex);
-        }
-    }
-    /// <summary>
-    /// Add other item to inventory in free slot./
-    /// Returns: True - successfully | False - fail
-    /// </summary>
-    /// <param name="itemOther">Other item</param>
-    /// <returns>True - successfully | False - fail</returns>
-    public bool AddItemToInventory(ItemOther itemOther)
-    {
-        ItemOther tempItemOther = new ItemOther();
-        //if item has already in inventory
-        foreach (ItemOther itemOtherinInv in itemsOtherInInv)
-            if (itemOtherinInv.id == itemOther.id)
-            {
-                tempItemOther = itemOtherinInv;
-                break;
-            }
-
-        if (tempItemOther.IsEmpty())
-        {
-            List<int> freeSlotsIndex = GetAllFreeIndexInInventory();
-            if (freeSlotsIndex.Count == 0)
-                return false;
-            AddItemInSlot(itemOther, freeSlotsIndex[0], true);
-        }
-        else
-        {
-            //update quntity item ha already
-            tempItemOther.quantity += itemOther.quantity;
-            UpdateItemObj(tempItemOther.indexItemInList);
-        }
-        return true;
+        return AddItemToInventory(item, indexSlot, false, true);
     }
     /// <summary>
     /// Add equip item to inventory in indexSlot./
     /// Returns: True - successfully | False - slot not free
     /// </summary>
-    /// <param name="itemEquip">Equip item</param>
-    /// <param name="indexSlot">Index Slot</param>
-    /// <param name="checkIsVoid">Check is free iindex in inventory</param>
-    /// <returns>True - successfully | False - fail</returns>
-    public bool AddItemToInventory(ItemEquip itemEquip, int indexSlot, bool checkIsVoid)
+    /// <param name="item">ItemEquip/ItemConsume/ItemOther</param>
+    /// <param name="indexSlot">Index slot in inventory</param>
+    /// <param name="createCopy">True - for create copy data item</param>
+    /// <param name="checkIsVoidSlot">True - for check index slot on void</param>
+    /// <returns></returns>
+    public bool AddItemToInventory(Item item, int indexSlot, bool createCopy, bool checkIsVoidSlot)
     {
-        if (checkIsVoid && !IsFreeIndexInInventory(indexSlot))
+        if (checkIsVoidSlot && !IsFreeIndexInInventory(indexSlot))
             return false;
-        AddItemInSlot(itemEquip, indexSlot, true);
-        return true;
-    }
-    /// <summary>
-    /// Add consume item to inventory in indexSlot./
-    /// Returns: True - successfully | False - slot not free
-    /// </summary>
-    /// <param name="itemConsume">Consume item</param>
-    /// <param name="indexSlot">Index Slot</param>
-    /// <param name="checkIsVoid">Check is free iindex in inventory</param>
-    /// <returns>True - successfully | False - fail</returns>
-    public bool AddItemToInventory(ItemConsume itemConsume, int indexSlot, bool checkIsVoid)
-    {
-        if (checkIsVoid && !IsFreeIndexInInventory(indexSlot))
-            return false;
-        AddItemInSlot(itemConsume, indexSlot, true);
-        return true;
-    }
-    /// <summary>
-    /// Add other item to inventory in indexSlot./
-    /// Returns: True - successfully | False - slot not free
-    /// </summary>
-    /// <param name="itemOther">Other item</param>
-    /// <param name="indexSlot">Index Slot</param>
-    /// <param name="checkIsVoid">Check is free iindex in inventory</param>
-    /// <returns>True - successfully | False - fail</returns>
-    public bool AddItemToInventory(ItemOther itemOther, int indexSlot, bool checkIsVoid)
-    {
-        if (checkIsVoid && !IsFreeIndexInInventory(indexSlot))
-            return false;
-        AddItemInSlot(itemOther, indexSlot, true);
+        Item result;
+        if (createCopy)
+            result = item.GetCopy();
+        else
+            result = item;
+        result.indexItemInList = indexSlot;
+        itemsInInv.Add(result);
+        AddItemInObj(result, indexSlot);
         return true;
     }
 
-
     /// <summary>
-    /// Delete item(stack) for this inventory
+    /// Return Item from inventory by id. Or load item from xml storage.
     /// </summary>
-    /// <param name="itemOther">Specimen item in inventory</param>
-    public void DelItemFromInventory(Item item)
+    /// <param name="id">Item id</param>
+    /// <param name="elseLoadFromXml">True for try load item from xml storage</param>
+    public Item GetItemById(int id, bool elseLoadFromXml)
     {
-        //If item is Equip
-        for (int i = 0; i < itemsEquipInInv.Count; i++)
-            if (itemsEquipInInv[i].indexItemInList == item.indexItemInList)
-            {
-                RemoveItemFromInvByIndex(i, item.itemType);
-                return;
-            }
+        foreach (Item iteminInv in itemsInInv)
+            if (iteminInv.id == id)
+                return iteminInv;
 
-        //If item is Consume
-        for (int i = 0; i < itemsConsumeInInv.Count; i++)
-            if (itemsConsumeInInv[i].indexItemInList == item.indexItemInList)
-            {
-                RemoveItemFromInvByIndex(i, item.itemType);
-                return;
-            }
+        if (elseLoadFromXml)
+        {
+            XmlStorageItem storageItem = new XmlStorageItem();
+            return storageItem.GetItemById(id);
+        }
+        return null;
+    }
 
-        //If item is Other
-        for (int i = 0; i < itemsOtherInInv.Count; i++)
-            if (itemsOtherInInv[i].indexItemInList == item.indexItemInList)
-            {
-                RemoveItemFromInvByIndex(i, item.itemType);
-                return;
-            }
-    }
-    public void DelItemFromInventory(ItemEquip itemEquip)
-    {
-        for (int i = 0; i < itemsEquipInInv.Count; i++)
-            if (itemsEquipInInv[i].indexItemInList == itemEquip.indexItemInList)
-                RemoveItemFromInvByIndex(i, itemEquip.itemType);
-    }
-    public void DelItemFromInventory(ItemConsume itemConsume)
-    {
-        for (int i = 0; i < itemsConsumeInInv.Count; i++)
-            if (itemsConsumeInInv[i].indexItemInList == itemConsume.indexItemInList)
-                RemoveItemFromInvByIndex(i, itemConsume.itemType);
-    }
-    public void DelItemFromInventory(ItemOther itemOther)
-    {
-        for (int i = 0; i < itemsOtherInInv.Count; i++)
-            if (itemsOtherInInv[i].indexItemInList == itemOther.indexItemInList)
-                RemoveItemFromInvByIndex(i, itemOther.itemType);
-    }
+
     /// <summary>
     /// Delete item by id from inventory./
     /// Returns: True - successfully | False - fail
@@ -292,151 +196,62 @@ public class Inventory : MonoBehaviour
     /// <param name="id">Id item</param>
     /// <param name="quantity">Quantity items</param>
     /// <returns>True - successfully | False - fail</returns>
-    public bool DelItemFromInventory(int id, int quantity)
+    public bool DeleteItemFromInventory(int id, int quantity)
     {
         int totalQuantity = 0;
-        Hashtable items = new Hashtable();
-        ItemType tempTypeItem = GetItemTypeByIdInInv(id);
-        switch (tempTypeItem)
-        {
-            case ItemType.Other:
-                for (int i = 0; i < itemsOtherInInv.Count; i++)
-                    if (itemsOtherInInv[i].id == id)
-                    {
-                        totalQuantity += itemsOtherInInv[i].quantity;
-                        items[i] = itemsOtherInInv[i].quantity;
-                    }
-                break;
-            case ItemType.Consume:
-                for (int i = 0; i < itemsConsumeInInv.Count; i++)
-                    if (itemsConsumeInInv[i].id == id)
-                    {
-                        totalQuantity += itemsConsumeInInv[i].quantity;
-                        items[i] = itemsConsumeInInv[i].quantity;
-                    }
-                break;
-            case ItemType.Equip:
-                for (int i = 0; i < itemsEquipInInv.Count; i++)
-                    if (itemsEquipInInv[i].id == id)
-                    {
-                        totalQuantity += itemsEquipInInv[i].quantity;
-                        items[i] = itemsEquipInInv[i].quantity;
-                    }
-                break;
-        }
+        List<Item> allItemsInInvById = new List<Item>();
 
-        if (totalQuantity < quantity)
+        foreach (Item itemInInv in itemsInInv)
+        {
+            if (itemInInv.id == id)
+            {
+                allItemsInInvById.Add(itemInInv);
+                totalQuantity += itemInInv.quantity;
+            }
+        }
+        if (allItemsInInvById.Count == 0 || totalQuantity < quantity)
             return false;
 
-        foreach (DictionaryEntry item in items)
+
+        foreach (Item itemInInvById in allItemsInInvById)
         {
-            if (quantity < (int)item.Value)
+            if (quantity <= itemInInvById.quantity)
             {
-                IncOrDecQuantityItemByIndex((int)item.Key, -quantity, tempTypeItem);
+                itemInInvById.quantity -= quantity;
+                UpdateItemObj(itemInInvById.indexItemInList);
                 return true;
             }
             else
             {
-                quantity -= (int)item.Value;
-                IncOrDecQuantityItemByIndex((int)item.Key, -(int)item.Value, tempTypeItem);
-                RemoveItemFromInvByIndex((int)item.Key, tempTypeItem);
+                quantity -= itemInInvById.quantity;
+                DeleteItemSlotFromInventory(itemInInvById);
             }
-            if (quantity == 0)
-            {
-                return true;
-            }
+
         }
         return false;
     }
-
-    public virtual ItemEquip GetEquipItem(Item item)
+    /// <summary>
+    /// Delete item slot from inventor by indexItemInList
+    /// </summary>
+    /// <param name="item">Item from this inventory</param>
+    public bool DeleteItemSlotFromInventory(Item item)
     {
-        foreach (ItemEquip itemEquip in itemsEquipInInv)
-            if (itemEquip.indexItemInList == item.indexItemInList)
-                return itemEquip;
-        return null;
-    }
-    public ItemConsume GetConsumeItem(Item item)
-    {
-        foreach (ItemConsume itemConsume in itemsConsumeInInv)
-            if (itemConsume.indexItemInList == item.indexItemInList)
-                return itemConsume;
-        return null;
-    }
-    public ItemOther GetOtherItem(Item item)
-    {
-        foreach (ItemOther itemOther in itemsOtherInInv)
-            if (itemOther.indexItemInList == item.indexItemInList)
-                return itemOther;
-        return null;
-    }
-    public ItemEquip GetItemEquipById(int id, bool elseLoadFromXml)
-    {
-        //if item has already in inventory
-        foreach (ItemEquip itemEquipInInv in itemsEquipInInv)
-            if (itemEquipInInv.id == id)
-                return itemEquipInInv;
-
-        //else add from xml storage item
-        if (elseLoadFromXml)
-        {
-            XmlStorageItem xmlStorage = new XmlStorageItem();
-            return xmlStorage.GetItemEquipById(id);
-        }
-        return null;
-    }
-    public ItemConsume GetItemConsumeById(int id, bool elseLoadFromXml)
-    {
-        //if item has already in inventory
-        foreach (ItemConsume itemConsumeInInv in itemsConsumeInInv)
-            if (itemConsumeInInv.id == id)
-                return itemConsumeInInv;
-
-        //else add from xml storage item
-        if (elseLoadFromXml)
-        {
-            XmlStorageItem xmlStorage = new XmlStorageItem();
-            return xmlStorage.GetItemConsumeById(id);
-        }
-
-        return null;
-    }
-    public ItemOther GetItemOtherById(int id, bool elseLoadFromXml)
-    {
-        //if item has already in inventory
-        foreach (ItemOther itemOtherinInv in itemsOtherInInv)
-            if (itemOtherinInv.id == id)
-                return itemOtherinInv;
-
-        //Add new item from xml storage
-        if (elseLoadFromXml)
-        {
-            XmlStorageItem xmlStorage = new XmlStorageItem();
-            return xmlStorage.GetItemOtherById(id);
-        }
-
-        return null;
-    }
-    public Item GetItemById(int id, bool elseLoadFromXml)
-    {
-        foreach (ItemOther itemOtherinInv in itemsOtherInInv)
-            if (itemOtherinInv.id == id)
-                return itemOtherinInv;
-        foreach (ItemConsume itemConsumeInInv in itemsConsumeInInv)
-            if (itemConsumeInInv.id == id)
-                return itemConsumeInInv;
-        foreach (ItemEquip itemEquipInInv in itemsEquipInInv)
-            if (itemEquipInInv.id == id)
-                return itemEquipInInv;
-        if (elseLoadFromXml)
-        {
-            XmlStorageItem storageItem = new XmlStorageItem();
-            return storageItem.GetResultItemById(id);
-        }
-        return null;
+        for (int i = 0; i < itemsInInv.Count; i++)
+            if (itemsInInv[i].indexItemInList == item.indexItemInList)
+            {
+                Destroy(slotContainer.GetChild(item.indexItemInList).GetChild(0).gameObject);
+                itemsInInv.RemoveAt(i);
+                return true;
+            }
+        return false;
     }
 
 
+    /// <summary>
+    /// Check number free slots in inventory./
+    /// Returns: True - inventor have "number" free slots | False - fail. 
+    /// </summary>
+    /// <param name="number">Number free slots</param>
     public bool CheckFreeSlot(int number)
     {
         int freeSlotsNumber = 0;
@@ -450,180 +265,27 @@ public class Inventory : MonoBehaviour
         return false;
     }
 
-    protected void AddItemInSlot(ItemEquip itemEquip, int indexSlot, bool createCopy)
+
+    /// <summary>
+    /// Add GameObgect Item in inventory
+    /// </summary>
+    /// <param name="item">ItemEquip/ItemConsume/ItemOther</param>
+    /// <param name="indexSlot">Index slot</param>
+    protected void AddItemInObj(Item item, int indexSlot)
     {
-        ItemEquip result;
-        if (createCopy)
-            result = itemEquip.getCopy();
-        else
-            result = itemEquip;
-        result.indexItemInList = indexSlot;
-        itemsEquipInInv.Add(result);
-        AddItemInObj(result, indexSlot);
-    }
-    protected void AddItemInSlot(ItemConsume itemConsume, int indexSlot, bool createCopy)
-    {
-        ItemConsume result;
-        if (createCopy)
-            result = itemConsume.getCopy();
-        else
-            result = itemConsume;
-        result.indexItemInList = indexSlot;
-        itemsConsumeInInv.Add(result);
-        AddItemInObj(result, indexSlot);
-    }
-    protected void AddItemInSlot(ItemOther itemOther, int indexSlot, bool createCopy)
-    {
-        ItemOther result;
-        if (createCopy)
-            result = itemOther.getCopy();
-        else
-            result = itemOther;
-        result.indexItemInList = indexSlot;
-        itemsOtherInInv.Add(result);
-        AddItemInObj(result, indexSlot);
-    }
-    protected void AddItemInObj(Item tempItem, int indexSlot)
-    {
-        if (itemTypesDB != null)
-            itemTypesDB.Add(new ItemTypesData(tempItem.id, tempItem.itemType));
-        tempItem.LoadResources();
+        item.LoadResources();
         GameObject itemObj = (GameObject)Instantiate(prefabItem, slotContainer.GetChild(indexSlot), false);
         ItemOnObject _ItemOnObject = itemObj.GetComponent<ItemOnObject>();
-        _ItemOnObject.Item = tempItem;
+        _ItemOnObject.Item = item;
         //itemObj.transform.SetParent(slotContainer.transform.GetChild(i));
         //itemObj.GetComponent<RectTransform>().localPosition = Vector3.zero;
         _ItemOnObject.GetTypeParentinventory = typeParentInv;
         _ItemOnObject.UpdateItem();
     }
-    /// <summary>
-    /// Add Equip in inventory extension method
-    /// </summary>
-    protected bool AddEquInInvExtension(int id, int quantity, int enchantLvl)
+    protected void UpdateItemObj(int indexItemInList)
     {
-        List<int> freeSlotsIndex = GetAllFreeIndexInInventory();
-        if (freeSlotsIndex.Count < quantity)
-            return false;
-
-        XmlStorageItem xmlStorage = new XmlStorageItem();
-        ItemEquip tempItemEquip = GetItemEquipById(id, true);
-
-        for (int i = 0; i < quantity; i++)
-        {
-            ItemEquip newTempItem = tempItemEquip.getCopy();
-            newTempItem.enchantLevel = enchantLvl;
-            AddItemInSlot(newTempItem, freeSlotsIndex[i], false);
-        }
-
-        return false;
+        slotContainer.GetChild(indexItemInList).GetChild(0).GetComponent<ItemOnObject>().UpdateItem();
     }
-    /// <summary>
-    /// Add Consume in inventory extension method
-    /// </summary>
-    protected bool AddConsInInvExtension(int id, int quantity)
-    {
-        bool createNew = false;
-        XmlStorageItem xmlStorage = new XmlStorageItem();
-        List<int> freeSlotsIndex = GetAllFreeIndexInInventory();
-        ItemConsume tempItemConsume = GetItemConsumeById(id, false);
-
-        //else add from xml storage item
-        if (tempItemConsume == null)
-        {
-            if (freeSlotsIndex.Count == 0)
-                return false;
-
-            tempItemConsume = xmlStorage.GetItemConsumeById(id);
-            if (tempItemConsume == null)
-                return false;
-            createNew = true;
-        }
-
-        int maxInStack = xmlStorage.GetConsumeMaxInStackById(id);
-        return AddConsInInvExtension(tempItemConsume, quantity, maxInStack, createNew, freeSlotsIndex);
-
-    }
-    /// <summary>
-    /// Add Consume in inventory second extension method
-    /// </summary>
-    protected bool AddConsInInvExtension(ItemConsume itemConsume, int quantity, int maxInStack, bool createNew, List<int> freeSlotsIndex)
-    {
-        int numIteration = 0;
-        if (itemConsume.quantity + quantity <= maxInStack)
-        {
-            itemConsume.quantity += quantity;
-            if (createNew)
-                AddItemInSlot(itemConsume, freeSlotsIndex[0], true);
-            else
-                UpdateItemObj(itemConsume.indexItemInList);
-            return true;
-        }
-
-        //else quantity > maxInStack
-        quantity -= (maxInStack - itemConsume.quantity);
-        while (quantity > maxInStack)
-        {
-            quantity -= maxInStack;
-            numIteration++;
-        }
-
-        if (freeSlotsIndex.Count < numIteration)
-            return false;
-
-        //add residue
-        itemConsume.quantity = quantity;
-        int iter = 0;
-        if (createNew)
-        {
-            AddItemInSlot(itemConsume, freeSlotsIndex[0], true);
-            iter++;
-        }
-        else
-            UpdateItemObj(itemConsume.indexItemInList);
-
-        //add max stacks
-        while (iter < numIteration)
-        {
-            ItemConsume newTempItem = itemConsume.getCopy();
-            newTempItem.quantity = maxInStack;
-            AddItemInSlot(newTempItem, freeSlotsIndex[iter], false);
-            iter++;
-        }
-        return true;
-    }
-    /// <summary>
-    /// Add Other item in inventory extension method
-    /// </summary>
-    protected bool AddOthInInvExtension(int id, int quantity)
-    {
-        ItemOther tempItemOther = GetItemOtherById(id, false);
-
-        if (tempItemOther == null)
-        {
-            XmlStorageItem xmlStorage = new XmlStorageItem();
-            List<int> freeSlotsIndex = GetAllFreeIndexInInventory();
-            //Add new item from xml storage
-            if (freeSlotsIndex.Count == 0)
-                return false;
-
-            tempItemOther = xmlStorage.GetItemOtherById(id);
-            if (tempItemOther == null)
-                return false;
-
-            tempItemOther.quantity = quantity;
-            AddItemInSlot(tempItemOther, freeSlotsIndex[0], false);
-        }
-        else
-        {
-            //update quntity item ha already
-            tempItemOther.quantity += quantity;
-            UpdateItemObj(tempItemOther.indexItemInList);
-        }
-        return true;
-    }
-
-
-
 
     protected List<int> GetAllFreeIndexInInventory()
     {
@@ -643,64 +305,108 @@ public class Inventory : MonoBehaviour
             return true;
         return false;
     }
-    protected ItemType GetItemTypeByIdInInv(int id)
-    {
-        XmlStorageItem xmlStorage = new XmlStorageItem();
-        foreach (ItemTypesData tempData in itemTypesDB)
-            if (tempData.id == id)
-                return tempData.itemType;
-        return xmlStorage.GetItemTypeById(id);
-    }
+    
 
-    protected void IncOrDecQuantityItemByIndex(int index, int incOrDec, ItemType itemType)
+
+    //----- Extension methods for AddItemInInvenory(Item item) ---
+    private bool AddEquipInInvExtension(Item item)
     {
-        switch (itemType)
-        {
-            case ItemType.Other:
-                itemsOtherInInv[index].quantity += incOrDec;
-                UpdateItemObj(itemsOtherInInv[index].indexItemInList);
-                break;
-            case ItemType.Consume:
-                itemsConsumeInInv[index].quantity += incOrDec;
-                UpdateItemObj(itemsConsumeInInv[index].indexItemInList);
-                break;
-            case ItemType.Equip:
-                itemsEquipInInv[index].quantity += incOrDec;
-                UpdateItemObj(itemsEquipInInv[index].indexItemInList);
-                break;
-        }
+        List<int> freeSlots = GetAllFreeIndexInInventory();
+        if (freeSlots.Count == 0)
+            return false;
+        item.indexItemInList = freeSlots[0];
+        itemsInInv.Add(item);
+        AddItemInObj(item, freeSlots[0]);
+        return true;
     }
-    protected void RemoveItemFromInvByIndex(int index, ItemType itemType)
+    private bool AddConsumInInvExtension(Item item)
     {
-        switch (itemType)
+        ItemConsume tempItem = item as ItemConsume;
+        bool createNew = true;
+
+        //Search similar item in inventory
+        foreach (Item itemInInv in itemsInInv)
+            if (itemInInv.id == item.id)
+                //If number items < maxInStack
+                if (itemInInv.quantity + item.quantity <= tempItem.maxInStack)
+                {
+                    itemInInv.quantity += item.quantity;
+                    UpdateItemObj(itemInInv.indexItemInList);
+                    return true;
+                }
+                else
+                {
+                    //if found first like currItem
+                    if (createNew)
+                        tempItem = itemInInv as ItemConsume;
+                    //Else: remember min number
+                    else if (tempItem.quantity > itemInInv.quantity)
+                        tempItem = itemInInv as ItemConsume;
+                    createNew = false;
+                }
+
+        List<int> freeSlots = GetAllFreeIndexInInventory();
+        int numIteration = 0;
+        int additionNumber = item.quantity;
+        if (createNew)
+            additionNumber = 0;
+
+        additionNumber -= (tempItem.maxInStack - tempItem.quantity);
+        while (additionNumber > tempItem.maxInStack)
         {
-            case ItemType.Other:
-                Destroy(slotContainer.GetChild(itemsOtherInInv[index].indexItemInList).GetChild(0).gameObject);
-                itemsOtherInInv.RemoveAt(index);
-                break;
-            case ItemType.Consume:
-                Destroy(slotContainer.GetChild(itemsConsumeInInv[index].indexItemInList).GetChild(0).gameObject);
-                itemsConsumeInInv.RemoveAt(index);
-                break;
-            case ItemType.Equip:
-                Destroy(slotContainer.GetChild(itemsEquipInInv[index].indexItemInList).GetChild(0).gameObject);
-                itemsEquipInInv.RemoveAt(index);
-                break;
+            additionNumber -= tempItem.maxInStack;
+            numIteration++;
         }
+
+        if (freeSlots.Count < numIteration)
+            return false;
+
+        //add residue
+        tempItem.quantity = additionNumber;
+        int iter = 0;
+        if (createNew)
+        {
+            tempItem.indexItemInList = freeSlots[0];
+            itemsInInv.Add(tempItem);
+            AddItemInObj(tempItem, freeSlots[0]);
+            iter++;
+        }
+        else
+            UpdateItemObj(tempItem.indexItemInList);
+
+        //add max stacks
+        while (iter < numIteration)
+        {
+            ItemConsume newTempItem = tempItem.getCopy();
+            newTempItem.quantity = newTempItem.maxInStack;
+            newTempItem.indexItemInList = freeSlots[iter];
+            itemsInInv.Add(newTempItem);
+            AddItemInObj(newTempItem, freeSlots[iter]);
+            iter++;
+        }
+        return true;
+
     }
-    protected void RemoveItemFromTypeData(int id)
+    private bool AddOtherInInvExtension(Item item)
     {
-        for (int i = 0; i < itemTypesDB.Count; i++)
-            if (itemTypesDB[i].id == id)
+        foreach (Item itemInInv in itemsInInv)
+        {
+            if (itemInInv.id == item.id)
             {
-                itemTypesDB.RemoveAt(i);
-                break;
+                itemInInv.quantity += item.quantity;
+                UpdateItemObj(itemInInv.indexItemInList);
+                return true;
             }
+        }
+        List<int> freeSlots = GetAllFreeIndexInInventory();
+        if (freeSlots.Count == 0)
+            return false;
+        item.indexItemInList = freeSlots[0];
+        itemsInInv.Add(item);
+        AddItemInObj(item, freeSlots[0]);
+        return true;
     }
-    protected void UpdateItemObj(int indexItemInList)
-    {
-        slotContainer.GetChild(indexItemInList).GetChild(0).GetComponent<ItemOnObject>().UpdateItem();
-    }
+    //^^^^^ Extension methods for AddItemInInvenory(Item item) ^^^
 
     #endregion add/delete items
 

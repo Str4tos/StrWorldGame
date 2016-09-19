@@ -54,10 +54,12 @@ public class ClickOnItem : MonoBehaviour, IPointerDownHandler
                     break;
 
                 case Inventory.TypeParentInv.storage:
-                    StorageUsage();
+                    if (_PlayerGui.InvBag.AddItemToInventory(item))
+                    _PlayerGui.InvStorage.DeleteItemSlotFromInventory(item);
                     break;
 
                 case Inventory.TypeParentInv.shop:
+                    //---Soon
                     // Add methods for shop
                     break;
 
@@ -97,45 +99,29 @@ public class ClickOnItem : MonoBehaviour, IPointerDownHandler
     {
         if (_PlayerGui.InvStorage.IsActive())
         {
-            switch (item.itemType)
-            {
-                case ItemType.Equip:
-                    ItemEquip tempEquip = _PlayerGui.InvBag.GetEquipItem(item);
-                    if (tempEquip != null && _PlayerGui.InvStorage.AddItemToInventory(tempEquip))
-                        _PlayerGui.InvBag.DelItemFromInventory(tempEquip);
-                    return;
-                case ItemType.Consume:
-                    ItemConsume tempConsume = _PlayerGui.InvBag.GetConsumeItem(item);
-                    if (tempConsume != null && _PlayerGui.InvStorage.AddItemToInventory(tempConsume))
-                        _PlayerGui.InvBag.DelItemFromInventory(tempConsume);
-                    return;
-                case ItemType.Other:
-                    ItemOther tempOther = _PlayerGui.InvBag.GetOtherItem(item);
-                    if (tempOther != null && _PlayerGui.InvStorage.AddItemToInventory(tempOther))
-                        _PlayerGui.InvBag.DelItemFromInventory(tempOther);
-                    return;
-            }
+               if (_PlayerGui.InvStorage.AddItemToInventory(item))
+                        _PlayerGui.InvBag.DeleteItemSlotFromInventory(item);
         }
         if (_PlayerGui.InvShop.IsActive())
         {
-            // Add methods for shop
+            // Add methods for shop In progress
             return;
         }
+        //---Soon
         //if(Inventory Crafting.isActive()) 
         // Add methods for Crafting inventory
 
         if (item.itemType == ItemType.Equip)
         {
-            ItemEquip itemForEquip = _PlayerGui.InvBag.GetEquipItem(item);
-            ItemEquip itemForBag = _PlayerGui.InvCharacter.Equip(itemForEquip);
-            _PlayerGui.InvBag.DelItemFromInventory(itemForEquip);
+            ItemEquip itemForBag = _PlayerGui.InvCharacter.Equip(item as ItemEquip);
+            _PlayerGui.InvBag.DeleteItemSlotFromInventory(item);
             if (itemForBag != null)
-                _PlayerGui.InvBag.AddItemToInventory(itemForBag, itemForBag.indexItemInList, false);
-
+                _PlayerGui.InvBag.AddItemToInventory(itemForBag, itemForBag.indexItemInList, false, false);
             return;
         }
         if (item.itemType == ItemType.Consume)
         {
+            //---Soon
             // Add methods for usage consume items
         }
         if (item.itemType == ItemType.Other)
@@ -143,41 +129,20 @@ public class ClickOnItem : MonoBehaviour, IPointerDownHandler
             _PlayerGui.InvCrafting.OpenInventory(item as ItemOther);
         }
     }
-    private void StorageUsage()
-    {
-        switch (item.itemType)
-        {
-            case ItemType.Equip:
-                ItemEquip tempEquip = _PlayerGui.InvStorage.GetEquipItem(item);
-                if (tempEquip != null && _PlayerGui.InvBag.AddItemToInventory(tempEquip))
-                    _PlayerGui.InvStorage.DelItemFromInventory(tempEquip);
-                return;
-            case ItemType.Consume:
-                ItemConsume tempConsume = _PlayerGui.InvStorage.GetConsumeItem(item);
-                if (tempConsume != null && _PlayerGui.InvBag.AddItemToInventory(tempConsume))
-                    _PlayerGui.InvStorage.DelItemFromInventory(tempConsume);
-                return;
-            case ItemType.Other:
-                ItemOther tempOther = _PlayerGui.InvStorage.GetOtherItem(item);
-                if (tempOther != null && _PlayerGui.InvBag.AddItemToInventory(tempOther))
-                    _PlayerGui.InvStorage.DelItemFromInventory(tempOther);
-                return;
-        }
-    }
     private void ActivateTooltip(PointerEventData data)
     {
         if (_ItemOnObject.GetTypeParentinventory == Inventory.TypeParentInv.bag
             && item.itemType == ItemType.Equip)
         {
-            ItemEquip tempEquip = _PlayerGui.InvBag.GetEquipItem(item);
-            tooltip.ShowTooltip(tempEquip, _PlayerGui.InvCharacter.GetEquipItem(tempEquip.itemEquipType));
+            ItemEquip tempItemEquip = item as ItemEquip;
+            tooltip.ShowTooltip(item as ItemEquip, _PlayerGui.InvCharacter.GetEquipItem(tempItemEquip.itemEquipType));
         }
         else if (item.itemType == ItemType.Equip)
-            tooltip.ShowTooltip(_PlayerGui.InvBag.GetEquipItem(item));
+            tooltip.ShowTooltip(item as ItemEquip);
         else if (item.itemType == ItemType.Consume)
-            tooltip.ShowTooltip(_PlayerGui.InvBag.GetConsumeItem(item));
+            tooltip.ShowTooltip(item as ItemConsume);
         else if (item.itemType == ItemType.Other)
-            tooltip.ShowTooltip(_PlayerGui.InvBag.GetOtherItem(item));
+            tooltip.ShowTooltip(item as ItemOther);
 
         Vector3[] slotCorners = new Vector3[4];                     //get the corners of the slot
         GetComponent<RectTransform>().GetWorldCorners(slotCorners); //get the corners of the slot                

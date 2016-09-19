@@ -48,14 +48,26 @@ public class BagInventory : Inventory
     public InventoryBagData GetInventoryData()
     {
         InventoryBagData result = new InventoryBagData();
-        result.itemsEquipInInv = itemsEquipInInv;
-        result.itemsConsumeInInv = itemsConsumeInInv;
-        result.itemsOtherInInv = itemsOtherInInv;
+        foreach (Item itemInInv in itemsInInv)
+            switch (itemInInv.itemType)
+            {
+                case ItemType.Equip:
+                    result.itemsEquipInInv.Add(itemInInv as ItemEquip);
+                    break;
+                case ItemType.Consume:
+                    result.itemsConsumeInInv.Add(itemInInv as ItemConsume);
+                    break;
+                case ItemType.Other:
+                    result.itemsOtherInInv.Add(itemInInv as ItemOther);
+                    break;
+            }
         result.CashValue = CashValue;
-
         return result;
     }
 
+
+
+    // Only for tests. Delete soon
     public void AddTestItem(int id)
     {
         AddItemToInventory(1, 5);

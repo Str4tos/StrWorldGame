@@ -75,7 +75,7 @@ public class CraftingInventory : MonoBehaviour {
         currRecipe = storageRecipes.GetRecipeByRecipeId(recipeItem.RecipeId);
 
         if (resultItem == null || resultItem.id != currRecipe.CraftResultID)
-            resultItem = storagetItem.GetResultItemById(currRecipe.CraftResultID);
+            resultItem = storagetItem.GetItemById(currRecipe.CraftResultID);
 
         ingridients = currRecipe.Ingredients;
         AddResultItemInObj(resultItem);
@@ -117,10 +117,10 @@ public class CraftingInventory : MonoBehaviour {
         Debug.Log("Create Item3");
         foreach (RecipeCraft.Ingredient ingridient in ingridients)
         {
-            playerBag.DelItemFromInventory(ingridient.id, ingridient.requiredNum);
+            playerBag.DeleteItemFromInventory(ingridient.id, ingridient.requiredNum);
         }
         Debug.Log("Create Item4");
-        playerBag.DelItemFromInventory(recipeItem); // Fixing this: delete 1 recipe not stack
+        playerBag.DeleteItemFromInventory(recipeItem.id, 1); // Fixing this: delete 1 recipe not stack
 
         float randomChance = Random.value;
 

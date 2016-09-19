@@ -46,6 +46,23 @@ public class Item
         if (dropModelObj == null)
             dropModelObj = Resources.Load(dropModelPath) as GameObject;
     }
+
+    public Item GetCopy()
+    {
+        switch (itemType)
+        {
+            case ItemType.Equip:
+                ItemEquip tempEquip = this as ItemEquip;
+                return (Item)tempEquip.MemberwiseClone();
+            case ItemType.Consume:
+                ItemConsume tempConsume = this as ItemConsume;
+                return (Item)tempConsume.MemberwiseClone();
+            case ItemType.Other:
+                ItemOther tempOther = this as ItemOther;
+                return (Item)tempOther.MemberwiseClone();
+        }
+        return (Item)this.MemberwiseClone();
+    }
 		
 }
 
