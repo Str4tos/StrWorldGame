@@ -4,6 +4,8 @@
 # StrWorldGame
 My first practice on unity3d.<br>
 Date created project: 8.8.2016.<br>
+->Break in the development started from 19.09.2016 in connection with the period for work.<br>
+
 I'm working on a project every day for over a month with the aim to learn a Unity3D.<br>
 As a teenager, I spent a lot of time in the MMORPG such as MuOnline, Lineage2 and etc.<br>
 Therefore to learn to work with Unity3d I decided to make such a game.<br>
