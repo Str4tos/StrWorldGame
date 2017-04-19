@@ -14,6 +14,7 @@ public class Inventory : MonoBehaviour
     protected List<ItemOther> itemsOtherInInv;
     protected List<ItemTypesData> itemTypesDB;
 
+    [SerializeField]
     protected Transform slotContainer;
     protected bool isActive;
 
@@ -33,7 +34,6 @@ public class Inventory : MonoBehaviour
 
     protected virtual void Start()
     {
-        slotContainer = transform.FindChild("Slots");
         prefabItem = Resources.Load("Prefabs/Inventory/Item") as GameObject;
         isActive = false;
         gameObject.SetActive(false);

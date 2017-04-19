@@ -1,86 +1,55 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-// You can switch between ortho and perspective view by clicking middle mouse button
-// at some point in development of your game try experimenting with ortho and perspective(plus field of view) and camera positioning to work out your own style of presentation
-// dont be afraid to change below values while doing that.
-
 public class CameraMovement : MonoBehaviour
 {
-	[HideInInspector] public Transform target;
+    public float adjustHeight = 9.0f;
+    public float adjustX = 6.0f;
+    public float adjustZ = 3.0f;
+    public float rotationSpeed = 44.0f;
 
-	public float adjustHeight = 9.0f;
-	public float adjustX = 6.0f;
-	public float adjustZ = 3.0f;
+    private Camera mainCamera;
+    private Vector3 lastTargetPosition;
+    private Transform target;
 
-	public bool useSmoothing = false;
-	public float heightDamping = 2.0f;
-	public float zxDamping = 33.0f;
+    private void Awake()
+    {
+        mainCamera = GetComponent<Camera>();
+    }
+    void Start()
+    {
+        target = GameObject.FindWithTag("Player").transform;
+    }
 
-	public bool useSlerp = false;
-	public float rotationSpeed = 44.0f;
+    void LateUpdate()
+    {
 
-	[HideInInspector] public float targetHeight = 10.0f;
-	[HideInInspector] public float currentHeight = 10.0f;
-	[HideInInspector] public float targetZ = 10.0f;
-	[HideInInspector] public float currentZ = 10.0f;
-	[HideInInspector] public float targetX = 10.0f;
-	[HideInInspector] public float currentX = 10.0f;
+        if (Input.GetAxis("Mouse ScrollWheel") > 0 && adjustHeight < 10.0f)
+        {
+            adjustHeight += 0.5f;
+        }
+        else if (Input.GetAxis("Mouse ScrollWheel") < 0 && adjustHeight > 1.0f)
+        {
+            adjustHeight -= 0.5f;
+        }
+        else if (lastTargetPosition == target.position)
+            return;
 
-	void Start ()
-	{
-		target = GameObject.FindWithTag ("Player").transform;
-	}
+        Vector3 newCamPosition = transform.position;
+        newCamPosition.y = target.position.y + adjustHeight;
+        newCamPosition.x = target.position.x + adjustX;
+        newCamPosition.z = target.position.z + adjustZ;
 
-	void LateUpdate ()
-	{
-	    
-		if (Input.GetAxis ("Mouse ScrollWheel") > 0 && gameObject.GetComponent<Camera> ().orthographic == false) {
-			adjustHeight += 0.5f;
-		}
-	
-		if (Input.GetAxis ("Mouse ScrollWheel") < 0 && gameObject.GetComponent<Camera> ().orthographic == false) {
-			adjustHeight -= 0.5f;
-		}
-		if (Input.GetMouseButtonDown (2)) {
-			if (gameObject.GetComponent<Camera> ().orthographic == true) {
-				gameObject.GetComponent<Camera> ().orthographic = false;
-				adjustHeight = 22;
-			} else {
-				gameObject.GetComponent<Camera> ().orthographic = true;
-			}
-		
-		}
-	
-		targetHeight = target.position.y + adjustHeight;
-		currentHeight = transform.position.y;
-		currentHeight = Mathf.Lerp (currentHeight, targetHeight, heightDamping * Time.deltaTime);
-    
-		targetX = target.position.x + adjustX;
-		currentX = transform.position.x;
-		currentX = Mathf.Lerp (currentX, targetX, zxDamping * Time.deltaTime);
-    
-		targetZ = target.position.z + adjustZ;
-		currentZ = transform.position.z;
-		currentZ = Mathf.Lerp (currentZ, targetZ, zxDamping * Time.deltaTime);
-		if (useSmoothing) {
-			transform.position = new Vector3 (currentX, currentHeight, currentZ); 
-		} else {
-			transform.position = new Vector3 (targetX, targetHeight, targetZ); 
-		}
-
-		if (useSlerp) {
-			LookAtPlayer ();
-		} else {
-			transform.LookAt (target);
-		}
+        transform.position = newCamPosition;
 
 
-	}
+        LookAtPlayer();
+        lastTargetPosition = target.position;
+    }
 
-	void LookAtPlayer ()
-	{
-		var targetRotation = Quaternion.LookRotation (target.transform.position - transform.position);
-		transform.rotation = Quaternion.Slerp (transform.rotation, targetRotation, Time.deltaTime * rotationSpeed);
-	}
+    void LookAtPlayer()
+    {
+        var targetRotation = Quaternion.LookRotation(target.position - transform.position);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * rotationSpeed);
+    }
 }

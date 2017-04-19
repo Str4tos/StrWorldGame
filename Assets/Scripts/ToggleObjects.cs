@@ -43,7 +43,7 @@ public class ToggleObjects : MonoBehaviour
     private void setActiveStates(Transform tempObject, bool activeState)
     {
         tempObject.GetComponent<Animator>().enabled = activeState;
-        NavMeshAgent tempNavMeshAgent = tempObject.GetComponent<NavMeshAgent>();
+        UnityEngine.AI.NavMeshAgent tempNavMeshAgent = tempObject.GetComponent<UnityEngine.AI.NavMeshAgent>();
         if (tempNavMeshAgent != null)
         {
             tempNavMeshAgent.enabled = activeState;

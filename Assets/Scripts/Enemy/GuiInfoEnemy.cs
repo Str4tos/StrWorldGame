@@ -42,7 +42,7 @@ public class GuiInfoEnemy : MonoBehaviour {
 	void Update () {
         if (enemyHealthScript != null)
         {
-			hpBar_slider.fillAmount = enemyHealthScript.getHealth / enemyHealthScript.getMaxHealth;
+			hpBar_slider.fillAmount = enemyHealthScript.Health / enemyHealthScript.MaxHealth;
             if (enemyHealthScript.IsDead)
             {
                 enemyHPpanel.SetActive(false);

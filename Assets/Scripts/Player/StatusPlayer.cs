@@ -6,84 +6,45 @@ using System.Collections.Generic;
 
 public class StatusPlayer : Status
 {
-
-    private GuiPlayer _PlayerGui;
-
+    #region Fields
     // Expirience
+    private const float expMultiplier = 1.1f;
     public int statPoints = 0;
     public float currExp = 0;
     [HideInInspector]
-    public float currExpToLevelUp = 37;
-    private float additionExp = 37;
-    public float movementSpeed = 6;
-    public float manaRegen = 0.005f; //percent MaxMana
+    public float requiredExpForLvl = 37;
 
+    [SerializeField]
     private GameObject lvlUpPrefab;
+
+    private AnimatorPlayer animatorPlayer;
 
     // List of all attributes
     public enum Attribute { Attackspeed, Movementspeed }
 
-    private Transform StatsPanel;
+    protected int weaponAtk = 0, equipDef = 0;
+    protected float weaponPOWpercent = 1, equipHPpercent = 1, equipMPpercent = 1;
 
-    void Start()
+    public VoidMethod OnChangeExp;
+    #endregion
+
+    private void Awake()
     {
-        _PlayerGui = gameObject.GetComponent<GuiPlayer>();
-        _Animator = gameObject.GetComponent<Animator>();
-        //        CalculateStats();
-        //		currExpToLevelUp = level * additionExp;
-        CalculateStats();
-        restoreHPandMP();
-		popupColorBasic = Color.red;
-		popupColorCritical = Color.red;
+        animatorPlayer = GetComponent<AnimatorPlayer>();
+    }
+    private void Start()
+    {
+        CalculateOptions();
+        RestoreHPandMP();
+        CalculateCurrExp();
+        popupColorBasic = Color.red;
+        popupColorCritical = Color.red;
         popupDmgMotion = 1;
-        currExpToLevelUp = level * additionExp;
-        _Animator.SetFloat("AttackSpeed", attackSpeed);
-        _PlayerGui.setGuiHealth(health, maxHealth);
-        _PlayerGui.setGuiMana(mana, maxMana);
-        _PlayerGui.setGuiExp(currExp, currExpToLevelUp);
-        InvokeRepeating("ManaRegen", 0.5f, 0.5f);
-
-        //--Visualization Lvl Up
-        lvlUpPrefab = (GameObject)Resources.Load("Prefabs/Effect/energyBlast");
+        StartManaRegeneration();
 
     }
-
-
-    void Update()
-    {
-        //Optimal Exemple
-        //         float timFlag;
-        //public float pause = 3;
-        //    void Update () {
-        //    if( timFlag + pause  <= Time.time)
-        //    {
-        //        timFlag = Time.time;
-        //    }
-        //    }
-
-    }
-
-    protected override void Death()
-    {
-        
-    }
-
-	public override void ReceivDamage(float amount, Color colorPopup)
-    {
-		base.ReceivDamage(amount, colorPopup);
-        _PlayerGui.setGuiHealth(health, maxHealth);
-    }
-
-    protected override void CalculateStats()
-    {
-        base.CalculateStats();
-        currExpToLevelUp = level * additionExp;
-        _Animator.SetFloat("AttackSpeed", attackSpeed);
-        _PlayerGui.setGuiHealth(health, maxHealth);
-        _PlayerGui.setGuiMana(mana, maxMana);
-    }
-
-    public void gainEXP(float gain, int enemyLvl)
+    
+    public void GainEXP(float gain, int enemyLvl)
     {
         if (enemyLvl - level > 50)
         {
@@ -93,127 +54,125 @@ public class StatusPlayer : Status
         {
             currExp += gain;
         }
-        if (currExp > currExpToLevelUp)
+        if (currExp > requiredExpForLvl)
         {
-            levelUp();
+            LevelUp();
         }
-        _PlayerGui.setGuiExp(currExp, currExpToLevelUp);
+        UpdateExpOnINterface();
     }
-
-    public void levelUp()
+    public void LevelUp()
     {
         level++;
-        currExp -= currExpToLevelUp;
+        currExp -= requiredExpForLvl;
         statPoints += 5;
-        GameObject lvlUpEffectInstanc = (GameObject)Instantiate(lvlUpPrefab);
+
+        CalculateCurrExp();
+        CalculateOptions();
+        RestoreHPandMP();
+
+        ShowLevelUpEffect();
+    }
+    public void ShowLevelUpEffect()
+    {
+        GameObject lvlUpEffectInstanc = Instantiate(lvlUpPrefab);
         lvlUpEffectInstanc.transform.position = transform.position + Vector3.up;
         Destroy(lvlUpEffectInstanc, 1.1f);
-        //Stratos | Learn Skills per lvl
-        //        if (GetComponent<SkillWindowC>())
-        //        {
-        //            GetComponent<SkillWindowC>().LearnSkillByLevel(level);
-        //        }
-
+    }
+    /// <summary>
+    /// This method call CalculateStats()
+    /// </summary>
+    public void CalculateOptions()
+    {
         CalculateStats();
-        restoreHPandMP();
-		_PlayerGui.setGuiHealth(health, maxHealth);
-
-        if (StatsPanel != null && StatsPanel.gameObject.activeSelf)
-        {
-            RefreshStatsInInventory(StatsPanel);
-        }
+        AttackDmg += weaponAtk;
+        Defense = agility / 7 + equipDef;
+        WizardyDmg *= weaponPOWpercent;
+        MaxHealth *= equipHPpercent;
+        MaxMana *= equipMPpercent;
     }
-
-    public void heal(float hp)
+    
+    public void UpdateHealthOnInterface()
     {
-        if (health == maxHealth)
-            return;
-        health += hp;
-        checkMaxHp();
-        _PlayerGui.setGuiHealth(health, maxHealth);
+        PlayerInterface.Instance.UpdateHealthAmount(Health, MaxHealth);
     }
-
-    /// <summary>
-    /// InvokeRepeating mana regeneration
-    /// </summary>
-    private void ManaRegen()
+    public void UpdateManaOnInterface()
     {
-        if (mana < maxMana)
-        {
-            mana += maxMana * manaRegen;
-            checkMaxMp();
-            _PlayerGui.setGuiMana(mana, maxMana);
-        }
+        PlayerInterface.Instance.UpdateManaAmount(Mana, MaxMana);
     }
-
-    /// <summary>
-    /// Chenge mana points value.\
-    /// Returns: True = Action complete | False = Deficiency MP.
-    /// </summary>
-    /// <param name="mp">Quantity mana points</param>
-    /// <param name="KindOfAction">True = Increase | False = Dcrease</param>
-    /// <returns>True = Action complete. False = Deficiency MP</returns>
-    public bool ManaPoints(float mp, bool KindOfAction)
+    public void UpdateExpOnINterface()
     {
-        if (KindOfAction)
-        {
-            mana += mp;
-            checkMaxMp();
-        }
-        else
-        {
-            if (mana < mp)
-            {
-                return false;
-            }
-            mana -= mp;
-        }
-        _PlayerGui.setGuiMana(mana, maxMana);
-        return true;
+        PlayerInterface.Instance.UpdateExpAmount(currExp, requiredExpForLvl);
+        if (OnChangeExp != null)
+            OnChangeExp();
     }
 
-    //----------States--------
-    public IEnumerator OnPoison(int hurtTime)
+    protected void CalculateCurrExp()
     {
-        int amount = 0;
-        GameObject eff = new GameObject();
-        Destroy(eff.gameObject);
-        if (!poison)
-        {
-            //int chance = 100;
-            //chance -= statusResist.poisonResist;
-            //if (chance > 0)
-            //{
-            //    int per = Random.Range(0, 100);
-            //    if (per <= chance)
-            //    {
-            poison = true;
-            amount = (int)(maxHealth * 0.02f); // Hurt 2% of Max HP
-            //}
-
-            //}
-            //--------------------
-            while (poison && hurtTime > 0)
-            {
-                if (poisonEffect)
-                { //Show Poison Effect
-                    eff = Instantiate(poisonEffect, transform.position, poisonEffect.transform.rotation) as GameObject;
-                    eff.transform.parent = transform;
-                }
-                yield return new WaitForSeconds(0.7f); // Reduce HP  Every 0.7f Seconds
-				ReceivDamage(amount, popupColorBasic);
-                if (eff)
-                { //Destroy Effect if it still on a map
-                    Destroy(eff.gameObject);
-                }
-                hurtTime--;
-                if (hurtTime <= 0)
-                {
-                    poison = false;
-                }
-            }
-        }
+        requiredExpForLvl = requiredExpForLvl * expMultiplier;
+        UpdateExpOnINterface();
     }
+    protected override void Death()
+    {
+
+    }
+    protected override void CalculateStats()
+    {
+        base.CalculateStats();
+        animatorPlayer.SetAttackSpeed(AttackSpeed);
+    }
+    protected override void SetHealth(float health)
+    {
+        base.SetHealth(health);
+        UpdateHealthOnInterface();
+    }
+    protected override void SetMana(float mana)
+    {
+        base.SetMana(mana);
+        UpdateManaOnInterface();
+    }
+    
+    ////----------States--------
+    //public IEnumerator OnPoison(int hurtTime)
+    //{
+    //    int amount = 0;
+    //    GameObject eff = new GameObject();
+    //    Destroy(eff.gameObject);
+    //    if (!poison)
+    //    {
+    //        //int chance = 100;
+    //        //chance -= statusResist.poisonResist;
+    //        //if (chance > 0)
+    //        //{
+    //        //    int per = Random.Range(0, 100);
+    //        //    if (per <= chance)
+    //        //    {
+    //        poison = true;
+    //        amount = (int)(maxHealth * 0.02f); // Hurt 2% of Max HP
+    //        //}
+
+    //        //}
+    //        //--------------------
+    //        while (poison && hurtTime > 0)
+    //        {
+    //            if (poisonEffect)
+    //            { //Show Poison Effect
+    //                eff = Instantiate(poisonEffect, transform.position, poisonEffect.transform.rotation) as GameObject;
+    //                eff.transform.parent = transform;
+    //            }
+    //            yield return new WaitForSeconds(0.7f); // Reduce HP  Every 0.7f Seconds
+    //ReceivDamage(amount, popupColorBasic);
+    //            if (eff)
+    //            { //Destroy Effect if it still on a map
+    //                Destroy(eff.gameObject);
+    //            }
+    //            hurtTime--;
+    //            if (hurtTime <= 0)
+    //            {
+    //                poison = false;
+    //            }
+    //        }
+    //    }
+    //}
 
 
     // be Delete
@@ -350,81 +309,53 @@ public class StatusPlayer : Status
 
     //}
 
-    public void ApplyAbnormalStat(int statId, float dur)
-    {
-        if (statId == 0)
-        {
-            OnPoison(Mathf.FloorToInt(dur));
-            StartCoroutine(OnPoison(Mathf.FloorToInt(dur)));
-        }
-        //if (statId == 1)
-        //{
-        //    //OnSilence(dur);
-        //    StartCoroutine(OnSilence(dur));
-        //}
-        //if (statId == 2)
-        //{
-        //    //OnStun(dur);
-        //    StartCoroutine(OnStun(dur));
-        //}
-        //if (statId == 3)
-        //{
-        //    //OnWebbedUp(dur);
-        //    StartCoroutine(OnWebbedUp(dur));
-        //}
+    //public IEnumerator OnBarrier(float dur)
+    //{
+    //    //Increase Defense
+    //    if (!buffBarrier)
+    //    {
+    //        buffBarrier = true;
+    //        buffBarrPercent = 1.0F - energy / 37000.0F;
+    //        if (buffBarrPercent > 0.2F)
+    //            buffBarrPercent = 0.2F;
+    //        //CalculateStatus();
+    //        yield return new WaitForSeconds(dur);
+    //        buffBarrPercent = 1.0F;
+    //        buffBarrier = false;
+    //        //CalculateStatus();
+    //    }
 
+    //}
+    //public IEnumerator OnHealthBuff(float dur)
+    //{
+    //    //Increase Magic Defense
+    //    if (!buffHealth)
+    //    {
+    //        buffHealth = true;
+    //        buffHealthPercent = 1.25F;
+    //        CalculateStats();
+    //        yield return new WaitForSeconds(dur);
+    //        buffHealthPercent = 1.0F;
+    //        buffHealth = false;
+    //        CalculateStats();
+    //    }
 
-    }
+    //}
+    //public IEnumerator OnDmgBuff(float dur)
+    //{
+    //    //Increase Attack
+    //    if (!buffDmg)
+    //    {
+    //        buffDmg = true;
+    //        buffDmgPercent = 1.0F + energy / 37000.0F;
+    //        CalculateStats();
+    //        yield return new WaitForSeconds(dur);
+    //        buffDmgPercent = 1.0F;
+    //        buffDmg = false;
+    //        CalculateStats();
+    //    }
 
-    public IEnumerator OnBarrier(float dur)
-    {
-        //Increase Defense
-        if (!buffBarrier)
-        {
-            buffBarrier = true;
-            buffBarrPercent = 1.0F - energy / 37000.0F;
-            if (buffBarrPercent > 0.2F)
-                buffBarrPercent = 0.2F;
-            //CalculateStatus();
-            yield return new WaitForSeconds(dur);
-            buffBarrPercent = 1.0F;
-            buffBarrier = false;
-            //CalculateStatus();
-        }
-
-    }
-
-    public IEnumerator OnHealthBuff(float dur)
-    {
-        //Increase Magic Defense
-        if (!buffHealth)
-        {
-            buffHealth = true;
-            buffHealthPercent = 1.25F;
-            CalculateStats();
-            yield return new WaitForSeconds(dur);
-            buffHealthPercent = 1.0F;
-            buffHealth = false;
-            CalculateStats();
-        }
-
-    }
-
-    public IEnumerator OnDmgBuff(float dur)
-    {
-        //Increase Attack
-        if (!buffDmg)
-        {
-            buffDmg = true;
-            buffDmgPercent = 1.0F + energy / 37000.0F;
-            CalculateStats();
-            yield return new WaitForSeconds(dur);
-            buffDmgPercent = 1.0F;
-            buffDmg = false;
-            CalculateStats();
-        }
-
-    }
+    //}
 
     //public IEnumerator OnFaith(int amount, float dur)
     //{
@@ -443,28 +374,28 @@ public class StatusPlayer : Status
 
     //}
 
-    public void ApplyBuff(int statId, float dur, int amount)
-    {
-        if (statId == 1)
-        {
-            //Increase Defense
-            StartCoroutine(OnBarrier(dur));
-        }
-        if (statId == 2)
-        {
-            //Increase Max Health
-            StartCoroutine(OnHealthBuff(dur));
-        }
-        if (statId == 3)
-        {
-            //Increase Attack
-            StartCoroutine(OnDmgBuff(dur));
-        }
+    //public void ApplyBuff(int statId, float dur, int amount)
+    //{
+    //    if (statId == 1)
+    //    {
+    //        //Increase Defense
+    //        StartCoroutine(OnBarrier(dur));
+    //    }
+    //    if (statId == 2)
+    //    {
+    //        //Increase Max Health
+    //        StartCoroutine(OnHealthBuff(dur));
+    //    }
+    //    if (statId == 3)
+    //    {
+    //        //Increase Attack
+    //        StartCoroutine(OnDmgBuff(dur));
+    //    }
 
-    }
+    //}
 
 
-    public void LoadDataPLayer(StatusPlayerData statusData)
+    public void LoadDataPlayer(StatusPlayerData statusData)
     {
         personalName = statusData.personalName;
         locationName = statusData.locationName;
@@ -475,178 +406,30 @@ public class StatusPlayer : Status
         vitality = statusData.vitality;
         energy = statusData.energy;
 
-        rangeAttack = statusData.rangeAttack;
 
         statPoints = statusData.statPoints;
         currExp = statusData.currExp;
-        currExpToLevelUp = statusData.currExpToLevelUp;
+        requiredExpForLvl = statusData.currExpToLevelUp;
     }
-
-    public StatusPlayerData GgetDataPLayer()
+    public StatusPlayerData GetDataPlayer()
     {
-        StatusPlayerData result = new StatusPlayerData();
-        result.personalName = personalName;
-        result.locationName = locationName;
+        StatusPlayerData result = new StatusPlayerData()
+        {
+            personalName = personalName,
+            locationName = locationName,
 
-        result.level = level;
-        result.strenght = strenght;
-        result.agility = agility;
-        result.vitality = vitality;
-        result.energy = energy;
+            level = level,
+            strenght = strenght,
+            agility = agility,
+            vitality = vitality,
+            energy = energy,
 
-        result.rangeAttack = rangeAttack;
 
-        result.statPoints = statPoints;
-        result.currExp = currExp;
-        result.currExpToLevelUp = currExpToLevelUp;
+            statPoints = statPoints,
+            currExp = currExp,
+            currExpToLevelUp = requiredExpForLvl
+        };
         return result;
     }
 
-    #region Stats Panel
-    /*Specific order of elements
-	 * 0 - Level
-	 * 1 - Point
-	 * 2 - Exp
-	 * 3 - Strength
-	 * 4 - Damage
-	 * 5 - Agility
-	 * 6 - Defence
-	 * 7 - AttackSpeed
-	 * 8 - Vitality
-	 * 9 - Health
-	 * 10 - Energy
-	 * 11 - Mana
-	 * 12 - WizardyDmg
-	 * Complex stats: 0 - StatText, 1 - StatPoint, 2 - button increase stat
-	 * 
-	*/
-    public void RefreshStatsInInventory(Transform statsTran)
-    {
-        if (statsTran == null)
-            return;
-        if (StatsPanel == null)
-            StatsPanel = statsTran;
-        RefreshExpLvl();
-        RefreshStrenght();
-        RefreshAgility();
-        RefreshVitality();
-        RefreshEnergy();
-        checkForPoints();
-    }
-
-    private void RefreshExpLvl()
-    {
-        if (StatsPanel == null)
-            return;
-        StatsPanel.GetChild(0).GetComponent<Text>().text = "Level: " + level;
-        StatsPanel.GetChild(2).GetComponent<Text>().text = "Exp: " + currExp + "/" + currExpToLevelUp;
-    }
-    private void RefreshStrenght()
-    {
-        if (StatsPanel == null)
-            return;
-        StatsPanel.GetChild(3).GetChild(1).GetComponent<Text>().text = strenght.ToString();
-        StatsPanel.GetChild(4).GetComponent<Text>().text = "Damage: " + attackDmg;
-    }
-    private void RefreshAgility()
-    {
-        if (StatsPanel == null)
-            return;
-        StatsPanel.GetChild(5).GetChild(1).GetComponent<Text>().text = agility.ToString();
-        StatsPanel.GetChild(6).GetComponent<Text>().text = "Defense: " + defense;
-        StatsPanel.GetChild(7).GetComponent<Text>().text = "Attack speed: " + (attackSpeed * 10f).ToString("F");
-    }
-    private void RefreshVitality()
-    {
-        if (StatsPanel == null)
-            return;
-        StatsPanel.GetChild(8).GetChild(1).GetComponent<Text>().text = vitality.ToString();
-        StatsPanel.GetChild(9).GetComponent<Text>().text = "Health: " + health.ToString("#") + "/" + maxHealth;
-    }
-    private void RefreshEnergy()
-    {
-        if (StatsPanel == null)
-            return;
-        StatsPanel.GetChild(10).GetChild(1).GetComponent<Text>().text = energy.ToString();
-        StatsPanel.GetChild(11).GetComponent<Text>().text = "Mana: " + mana.ToString("#") + "/" + maxMana;
-        StatsPanel.GetChild(12).GetComponent<Text>().text = "Wizardy Dmg: " + wizardyDmg;
-    }
-
-    private void checkForPoints()
-    {
-        if (StatsPanel == null)
-            return;
-        Transform PointTran = StatsPanel.GetChild(1);
-        PointTran.GetComponent<Text>().text = "Point " + statPoints;
-        if (statPoints > 0)
-        {
-            if (!PointTran.gameObject.activeSelf)
-            {
-                PointTran.gameObject.SetActive(true);
-                //Strenght
-                StatsPanel.GetChild(3).GetChild(2).gameObject.SetActive(true);
-                //Agility
-                StatsPanel.GetChild(5).GetChild(2).gameObject.SetActive(true);
-                //Vitality
-                StatsPanel.GetChild(8).GetChild(2).gameObject.SetActive(true);
-                //Energy
-                StatsPanel.GetChild(10).GetChild(2).gameObject.SetActive(true);
-            }
-        }
-        else
-        {
-            if (PointTran.gameObject.activeSelf)
-            {
-                PointTran.gameObject.SetActive(false);
-                //Strenght
-                StatsPanel.GetChild(3).GetChild(2).gameObject.SetActive(false);
-                //Agility
-                StatsPanel.GetChild(5).GetChild(2).gameObject.SetActive(false);
-                //Vitality
-                StatsPanel.GetChild(8).GetChild(2).gameObject.SetActive(false);
-                //Energy
-                StatsPanel.GetChild(10).GetChild(2).gameObject.SetActive(false);
-            }
-        }
-    }
-
-    public void IncreaseStr()
-    {
-        strenght++;
-        statPoints--;
-        CalculateStats();
-        RefreshStrenght();
-        checkForPoints();
-    }
-
-    public void IncreaseAgi()
-    {
-        agility++;
-        statPoints--;
-        CalculateStats();
-        RefreshAgility();
-        checkForPoints();
-    }
-
-    public void IncreaseVit()
-    {
-        vitality++;
-        statPoints--;
-        CalculateStats();
-        RefreshVitality();
-        checkForPoints();
-        _PlayerGui.setGuiHealth(health, maxHealth);
-    }
-
-    public void IncreaseEne()
-    {
-        energy++;
-        statPoints--;
-        CalculateStats();
-        RefreshEnergy();
-        checkForPoints();
-        _PlayerGui.setGuiMana(mana, maxMana);
-    }
-
-    #endregion
 }

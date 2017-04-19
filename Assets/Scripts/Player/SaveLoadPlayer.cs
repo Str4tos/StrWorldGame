@@ -19,12 +19,10 @@ public class SaveLoadPlayer : MonoBehaviour
 
 
     private StatusPlayer _StatusPlayer;
-    private GuiPlayer _PlayerGui;
 
     void Start()
     {
         _StatusPlayer = gameObject.GetComponent<StatusPlayer>();
-        _PlayerGui = gameObject.GetComponent<GuiPlayer>();
         //_PlayerGui.InvBag.InventoryOpen += LoadItemsInBag;
 
         nameSaveStats += _StatusPlayer.personalName + ".stat";
@@ -52,16 +50,16 @@ public class SaveLoadPlayer : MonoBehaviour
         XmlSerializer serializer = new XmlSerializer(typeof(InventoryBagData));
         string path = System.IO.Path.Combine(Application.persistentDataPath, nameSaveBag);
         FileStream stream = new FileStream(path, FileMode.Open);
-        _PlayerGui.InvBag.LoadSerialization(serializer.Deserialize(stream) as InventoryBagData);
+        PlayerInterface.Instance.bagInv.LoadSerialization(serializer.Deserialize(stream) as InventoryBagData);
         stream.Close();
-        _PlayerGui.InvBag.InventoryInit -= LoadBagFromSave;
+        PlayerInterface.Instance.bagInv.InventoryInit -= LoadBagFromSave;
     }
     public void SaveItemsFromBag()
     {
         XmlSerializer serializer = new XmlSerializer(typeof(InventoryBagData));
         string path = System.IO.Path.Combine(Application.persistentDataPath, nameSaveBag);
         FileStream stream = new FileStream(path, FileMode.Create);
-        serializer.Serialize(stream, _PlayerGui.InvBag.GetInventoryData());
+        serializer.Serialize(stream, PlayerInterface.Instance.bagInv.GetInventoryData());
         stream.Close();
     }
 
@@ -71,16 +69,16 @@ public class SaveLoadPlayer : MonoBehaviour
         XmlSerializer serializer = new XmlSerializer(typeof(InventoryCharacterData));
         string path = System.IO.Path.Combine(Application.persistentDataPath, nameSaveEquip);
         FileStream stream = new FileStream(path, FileMode.Open);
-        _PlayerGui.InvCharacter.LoadSerialization(serializer.Deserialize(stream) as InventoryCharacterData);
+        PlayerInterface.Instance.characterInv.LoadSerialization(serializer.Deserialize(stream) as InventoryCharacterData);
         stream.Close();
-        _PlayerGui.InvCharacter.InventoryInit -= LoadEquipFromSave;
+        PlayerInterface.Instance.characterInv.InventoryInit -= LoadEquipFromSave;
     }
     public void SaveItemsFromEquip()
     {
         XmlSerializer serializer = new XmlSerializer(typeof(InventoryCharacterData));
         string path = System.IO.Path.Combine(Application.persistentDataPath, nameSaveEquip);
         FileStream stream = new FileStream(path, FileMode.Create);
-        serializer.Serialize(stream, _PlayerGui.InvCharacter.GetInventoryData());
+        serializer.Serialize(stream, PlayerInterface.Instance.characterInv.GetInventoryData());
         stream.Close();
     }
 

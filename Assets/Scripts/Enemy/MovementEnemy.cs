@@ -3,10 +3,11 @@ using System.Collections;
 
 public class MovementEnemy : MonoBehaviour
 {
+    public float attackRange = 1.0f;
 
 	private Ray rayMouse;
 	private RaycastHit hitObj;
-	private NavMeshAgent _NavMeshAgent;
+	private UnityEngine.AI.NavMeshAgent _NavMeshAgent;
 	private Animator _Animator;
 
 	//[HideInInspector]
@@ -51,12 +52,12 @@ public class MovementEnemy : MonoBehaviour
 	{
 		//spellCastPoint = transform.FindChild ("SpellCastPoint").gameObject;
 		_Animator = gameObject.GetComponent<Animator> ();
-		_NavMeshAgent = gameObject.GetComponent<NavMeshAgent> ();
+		_NavMeshAgent = gameObject.GetComponent<UnityEngine.AI.NavMeshAgent> ();
 		_StatusEnemy = gameObject.GetComponent<StatusEnemy> ();
 		_SpawningEnemy = transform.parent.GetComponent<SpawningEnemy> ();
 		//_NavMeshAgent.updateRotation = false;
 		//_NavMeshAgent.updatePosition = false;
-		_NavMeshAgent.stoppingDistance = _StatusEnemy.rangeAttack * 0.8f;
+		_NavMeshAgent.stoppingDistance = attackRange * 0.8f;
 		//distanceToKeep = _StatusEnemy.fireCastRange - eAgent.stoppingDistance;
 		//outOfMeleeRange = ms.psSkills.meleeRange;
 
@@ -217,7 +218,7 @@ public class MovementEnemy : MonoBehaviour
 	// Event functions are called by animations, check animation properities to set desired timing.
 	void EventBasicAtack ()
 	{
-		_StatusEnemy.TargetStatus.ReceivDamage (_StatusEnemy.getAttackDamage, _StatusEnemy);
+		_StatusEnemy.TargetStatus.ReceivDamage (_StatusEnemy.AttackDmg);
 		if (_StatusEnemy.TargetStatus.IsDead) {
 			_Animator.SetBool ("BasicAttackBool", false);
 		}

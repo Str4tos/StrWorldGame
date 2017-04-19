@@ -5,8 +5,9 @@ using System.Collections;
 public class StatusEnemy : Status {
 
 	private StatusPlayer targetStatus;
-
-	private CharacterController _CharacterController;
+    
+    protected Animator _Animator;
+    private CharacterController _CharacterController;
 	private MouseOverEnemy _MouseOverEnemy;
 	private GameObject collaiderMouse;
 	public float expReward = 20.0f;
@@ -22,7 +23,7 @@ public class StatusEnemy : Status {
         collaiderMouse = gameObject.transform.FindChild("ColliderMouse").gameObject;
         _MouseOverEnemy = collaiderMouse.GetComponent<MouseOverEnemy>();
 		CalculateStats ();
-		restoreHPandMP ();
+		RestoreHPandMP ();
 		popupColorBasic = new Color (0.93f, 0.6f, 0.0f); 
 		popupColorCritical = new Color(0.75f, 0.40f, 1.0f);
         popupDmgMotion = -2;
@@ -62,13 +63,7 @@ public class StatusEnemy : Status {
 		get{ return targetStatus; }
 		set{ targetStatus = value; }
 	}
-
-	public override void ReceivDamage (float amount, Status _Status)
-	{
-		if (targetStatus == null)
-			targetStatus = _Status as StatusPlayer;
-		base.ReceivDamage (amount, _Status);
-	}
+    
 
 	protected override void Death(){
 
@@ -78,9 +73,9 @@ public class StatusEnemy : Status {
 
         _MouseOverEnemy.SetMaterialOutline(false);
 
-		dead = true;
+		IsDead = true;
 
-		targetStatus.gainEXP (expReward, level);
+		targetStatus.GainEXP (expReward, level);
 
 		Destroy(_CharacterController);
 		Destroy(collaiderMouse);

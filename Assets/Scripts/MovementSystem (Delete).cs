@@ -5,7 +5,7 @@ public class MovementSystem : MonoBehaviour
 {
     protected Ray rayMouse;
     protected RaycastHit hitObj;
-    protected NavMeshAgent _NavMeshAgent;
+    protected UnityEngine.AI.NavMeshAgent _NavMeshAgent;
     protected Animator _Animator;
     protected GameObject targetObj;
 
